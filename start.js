@@ -59,8 +59,7 @@ socket.on('connect', () => {
 
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
-    retryCount++;
-    setTimeout(connectWithRetry, 2000); // Use function reference instead of string
+    retryCount++;setTimeout(() => connectWithRetry(), 2000);
 });
 
 socket.on('disconnect', () => {

@@ -66,68 +66,69 @@ socketio = SocketIO(
     always_connect=True
 )
 
-# File to store websites and tags
-DATA_FILE = Path(current_dir) / 'data' / 'websites_tags.json'
-DATA_FILE.parent.mkdir(exist_ok=True)
+# Initialize data storage
+try:
+    # File to store websites and tags
+    DATA_FILE = Path(current_dir) / 'data' / 'websites_tags.json'
+    DATA_FILE.parent.mkdir(exist_ok=True)
+    
+    # Initialize empty data structures
+    websites_tags = {}
+    tag_frequencies = {}
+    
+    # Load existing data
+    if DATA_FILE.exists():
+        with open(DATA_FILE, 'r') as f:
+            data = json.load(f)
+            websites_tags = data.get('websites_tags', {})
+            tag_frequencies = data.get('tag_frequencies', {})
+except Exception as e:
+    logger.error(f"Error initializing data storage: {str(e)}", exc_info=True)
+    websites_tags = {}
+    tag_frequencies = {}
 
-# Load existing data from file or initialize empty
-def load_data():
-    global websites_tags, tag_frequencies
-    try:
-        if DATA_FILE.exists():
-            with open(DATA_FILE, 'r') as f:
-                data = json.load(f)
-                websites_tags = data.get('websites_tags', {})
-                tag_frequencies = data.get('tag_frequencies', {})
-        else:
-            websites_tags = {}
-            tag_frequencies = {}
-    except Exception as e:
-        logger.error(f"Error loading data: {str(e)}")
-        websites_tags = {}
-        tag_frequencies = {}
-
-# Save data to file
 def save_data():
     try:
+        DATA_FILE.parent.mkdir(exist_ok=True)
         with open(DATA_FILE, 'w') as f:
             json.dump({
                 'websites_tags': websites_tags,
                 'tag_frequencies': tag_frequencies
             }, f, indent=2)
     except Exception as e:
-        logger.error(f"Error saving data: {str(e)}")
-
-# Load data when starting server
-load_data()
+        logger.error(f"Error saving data: {str(e)}", exc_info=True)
 
 @socketio.on('submit_website_and_tags')
 def handle_website_tags(data):
-    website = data.get('website')
-    tags = data.get('tags', [])
-    
-    if not website or not tags:
-        return
-    
-    # Store website and its tags
-    websites_tags[website] = tags
-    
-    # Update tag frequencies
-    for tag in tags:
-        tag_frequencies[tag] = tag_frequencies.get(tag, 0) + 1
-    
-    # Save to file
-    save_data()
-    
-    # Emit updated tag frequencies to all clients
-    socketio.emit('tag_frequencies_updated', {'frequencies': tag_frequencies})
+    try:
+        website = data.get('website')
+        tags = data.get('tags', [])
+        
+        if not website or not tags:
+            return
+        
+        # Store website and its tags
+        websites_tags[website] = tags
+        
+        # Update tag frequencies
+        for tag in tags:
+            tag_frequencies[tag] = tag_frequencies.get(tag, 0) + 1
+        
+        # Save to file
+        save_data()
+        
+        # Emit updated tag frequencies to all clients
+        socketio.emit('tag_frequencies_updated', {'frequencies': tag_frequencies})
+    except Exception as e:
+        logger.error(f"Error in handle_website_tags: {str(e)}", exc_info=True)
+        socketio.emit('error', {'message': str(e)})
 
 @socketio.on('search_query')
 def handle_search(data):
-    query = data.get('query', '')
-    selected_tags = set(data.get('tags', []))
-    
     try:
+        query = data.get('query', '')
+        selected_tags = set(data.get('tags', []))
+        
         # Get matching websites based on tags
         matching_websites = set()
         if selected_tags:
@@ -173,10 +174,10 @@ def handle_search(data):
         socketio.emit('recommended_tags', {'tags': recommended_tags})
         
     except Exception as e:
-        logger.error(f"Search error: {str(e)}")
+        logger.error(f"Error in handle_search: {str(e)}", exc_info=True)
         socketio.emit('error', {'message': str(e)})
-    
-    socketio.emit('search_complete')
+    finally:
+        socketio.emit('search_complete')
 
 def get_recommended_tags(query):
     # Get tags that are semantically related to the query
@@ -201,31 +202,17 @@ def get_recommended_tags(query):
 @app.route('/')
 def index():
     try:
-        logger.info("Serving index.html")
-        index_path = os.path.join(static_folder, 'index.html')
-        logger.debug(f"Index path: {index_path}")
-        if os.path.exists(index_path):
-            return send_file(index_path)
-        else:
-            logger.error(f"index.html not found at {index_path}")
-            return "Error: index.html not found", 404
+        return send_from_directory('public', 'index.html')
     except Exception as e:
-        logger.error(f"Error serving index.html: {str(e)}")
+        logger.error(f"Error serving index.html: {str(e)}", exc_info=True)
         return f"Error: {str(e)}", 500
 
 @app.route('/<path:path>')
 def serve_static(path):
     try:
-        logger.info(f"Serving static file: {path}")
-        file_path = os.path.join(static_folder, path)
-        logger.debug(f"Full file path: {file_path}")
-        if os.path.exists(file_path):
-            return send_file(file_path)
-        else:
-            logger.error(f"File not found: {file_path}")
-            return f"File not found: {path}", 404
+        return send_from_directory('public', path)
     except Exception as e:
-        logger.error(f"Error serving static file {path}: {str(e)}")
+        logger.error(f"Error serving static file {path}: {str(e)}", exc_info=True)
         return f"Error: {str(e)}", 500
 
 # Set up all routes and socket handlers
@@ -248,5 +235,5 @@ if __name__ == '__main__':
                 log_output=True
             )
     except Exception as e:
-        logger.error(f"Failed to start server: {str(e)}")
+        logger.error(f"Failed to start server: {str(e)}", exc_info=True)
         raise  # Re-raise the exception to see the full error

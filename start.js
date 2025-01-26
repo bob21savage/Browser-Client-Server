@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
-const flaskUrl = process.env.FLASK_URL || 'ws://localhost:3001'; // Update to the WebSocket server URL
+const flaskUrl = 'https://vercel.com/bob21savages-projects/browser-client-server/Dtv4wPYB4byS2TYoHuNqH3DpKTzS'; // Updated to the Vercel deployment URL
 
 // Enable CORS
 app.use(cors({

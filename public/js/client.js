@@ -93,6 +93,20 @@ socket.on('search_error', (data) => {
     if (searchButton) searchButton.disabled = false;
 });
 
+// Ensure no use of eval(), new Function(), setTimeout([string], ...), or setInterval([string], ...)
+// Replace any such usage with safer alternatives
+
+// Example of replacing setTimeout with a function reference
+function retryConnection() {
+    connectWithRetry();
+}
+
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    retryCount++;
+    setTimeout(retryConnection, 2000); // Use function reference instead of string
+});
+
 // Helper Functions
 function updateStatus(message, type = 'info') {
     if (statusElement) {

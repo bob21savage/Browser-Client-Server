@@ -60,7 +60,7 @@ socket.on('connect', () => {
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
     retryCount++;
-    setTimeout(connectWithRetry, 2000);
+    setTimeout(connectWithRetry, 2000); // Use function reference instead of string
 });
 
 socket.on('disconnect', () => {
@@ -74,7 +74,7 @@ const proxyOptions = {
     ws: true,  // Enable WebSocket proxy
     secure: false,
     logLevel: 'debug',
-    onError: (err) => {
+    onError: (err, req, res) => {
         console.error('Proxy error:', err);
         res.writeHead(500, {
             'Content-Type': 'text/plain'

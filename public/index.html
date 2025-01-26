@@ -1,443 +1,301 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Video Link Scraper</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video & Web Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --background: #000000;
+            --text: #ffffff;
+            --text-light: #cccccc;
+            --border: #333333;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            color: var(--text);
+            background: var(--background);
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
+            padding: 2rem;
         }
-        .main-content {
-            width: 100%;
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
         }
-        .sidebar {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary-color), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .search-box {
-            margin-bottom: 20px;
+
+        .search-container {
+            background: #111111;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+        }
+
+        #search-form {
             display: flex;
-            gap: 10px;
+            gap: 1rem;
         }
+
         #search-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            background-color: #222222;
+            color: var(--text);
         }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
+
+        #search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #search-button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 16px;
+            transition: background-color 0.2s;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        #search-button:hover {
+            background: var(--primary-hover);
         }
-        #status {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
+
+        .status {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
         }
-        .status-info { background-color: #e3f2fd; color: #0d47a1; }
-        .status-success { background-color: #e8f5e9; color: #1b5e20; }
-        .status-error { background-color: #ffebee; color: #b71c1c; }
-        
-        #results {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-info { background: #dbeafe; color: #1e40af; }
+
+        .search-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
         }
-        .video-card {
+
+        .stat-item {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: transform 0.2s;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
         }
-        .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .video-thumbnail {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            background-color: #eee;
-        }
-        .video-info {
-            padding: 15px;
-        }
-        .video-title {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            font-weight: bold;
-            color: #1a0dab;
-        }
-        .video-description {
-            font-size: 14px;
-            color: #545454;
-            margin-bottom: 10px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .video-source {
-            font-size: 12px;
-            color: #006621;
-        }
-        #loader {
-            display: none;
-            width: 100%;
-            text-align: center;
-            padding: 20px;
-        }
-        #loader::after {
-            content: '';
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .tag-form {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .tag-form input {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .tag {
-            background: #e9ecef;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #495057;
-            cursor: pointer;
-        }
-        .tag:hover {
-            background: #dee2e6;
-        }
-        .tag.selected {
-            background: #007bff;
-            color: white;
-        }
-        
-        .search-options {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin: 0 10px;
-        }
-        .search-options label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
+
         .result-item {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: #111111;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .result-item.video {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 15px;
+
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            background: #222222;
         }
-        .video-thumbnail img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .video-info, .website-info {
-            flex: 1;
-        }
-        .video-title, .website-title {
-            margin: 0 0 10px 0;
-            font-size: 18px;
-        }
-        .video-title a, .website-title a {
-            color: #1a0dab;
-            text-decoration: none;
-        }
-        .video-title a:hover, .website-title a:hover {
-            text-decoration: underline;
-        }
-        .video-description, .website-description {
-            color: #545454;
-            margin-bottom: 10px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .video-metadata, .website-metadata {
-            font-size: 12px;
-            color: #006621;
-        }
-        .video-container {
-            margin-top: 15px;
+
+        .video-embed {
+            margin-bottom: 1rem;
             position: relative;
-            width: 100%;
             padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            background-color: #000000;
         }
-        .video-container iframe {
+
+        .video-embed iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
         }
-        .watch-button {
-            margin-top: 10px;
-            padding: 5px 10px;
-            background: #cc0000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
+
+        .result-thumbnail {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
         }
-        .watch-button:hover {
-            background: #990000;
+
+        .result-title {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4a9eff;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
         }
-        .close-button {
-            position: absolute;
-            top: -30px;
-            right: 0;
-            padding: 5px 10px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .result-title:hover {
+            color: var(--primary-color);
         }
-        .website-icon img {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        .search-stats {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
+
+        .result-metadata {
             display: flex;
-            gap: 15px;
+            gap: 1rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
         }
-        .search-stats span {
-            font-size: 14px;
-            color: #666;
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid var(--border);
+            border-bottom-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 2rem auto;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .search-options {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin: 0 1rem;
+        }
+
+        .search-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .search-options input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+
+        .result-item.website {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .website-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .website-content {
+            flex: 1;
+        }
+
+        .website-url {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            #search-form {
+                flex-direction: column;
+            }
+
+            #search-button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="main-content">
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Enter your search query...">
-                <div class="search-options">
-                    <label><input type="checkbox" id="search-videos" checked> Videos</label>
-                    <label><input type="checkbox" id="search-websites" checked> Websites</label>
-                </div>
-                <button onclick="startSearch()">Search</button>
+        <header>
+            <h1>Video & Web Search</h1>
+            <p class="subtitle">Search for videos and websites across multiple platforms</p>
+        </header>
+
+        <main>
+            <div class="search-container">
+                <form id="search-form">
+                    <input type="text" id="search-input" placeholder="Enter your search query..." required>
+                    <div class="search-options">
+                        <label>
+                            <input type="checkbox" id="search-videos" checked>
+                            Videos
+                        </label>
+                        <label>
+                            <input type="checkbox" id="search-websites" checked>
+                            Websites
+                        </label>
+                    </div>
+                    <button type="submit" id="search-button">Search</button>
+                </form>
+                <div id="status" class="status"></div>
+                <div id="stats"></div>
             </div>
-            <div id="status"></div>
-            <div id="loader"></div>
-            <div id="stats"></div>
             <div id="results"></div>
-        </div>
-        
-        <div class="sidebar">
-            <h3>Add Website & Tags</h3>
-            <div class="tag-form">
-                <input type="text" id="website-input" placeholder="Enter website URL...">
-                <input type="text" id="tag-input" placeholder="Enter tags (comma separated)...">
-                <button onclick="submitWebsiteAndTags()">Submit</button>
-            </div>
-            
-            <h3>Recommended Tags</h3>
-            <div id="recommended-tags" class="tags-container">
-                <!-- Tags will be dynamically added here -->
-            </div>
-            
-            <h3>Popular Tags</h3>
-            <div id="popular-tags" class="tags-container">
-                <!-- Popular tags will be dynamically added here -->
-            </div>
-        </div>
+        </main>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script>
-        const socket = io('http://localhost:5001');
-        const resultsDiv = document.getElementById('results');
-        const statusDiv = document.getElementById('status');
-        const loader = document.getElementById('loader');
-        let searchInProgress = false;
-
-        function showStatus(message, type = 'info') {
-            statusDiv.textContent = message;
-            statusDiv.className = `status-${type}`;
-        }
-
-        function startSearch() {
-            if (searchInProgress) {
-                showStatus('Search already in progress...', 'info');
-                return;
-            }
-
-            const query = document.getElementById('search-input').value.trim();
-            if (!query) {
-                showStatus('Please enter a search query', 'error');
-                return;
-            }
-
-            // Clear previous results
-            resultsDiv.innerHTML = '';
-            showStatus('Starting search...', 'info');
-            loader.style.display = 'block';
-            searchInProgress = true;
-
-            // Emit search query
-            socket.emit('search_query', { query });
-        }
-
-        function createVideoCard(result) {
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            
-            // Create thumbnail
-            const thumbnail = document.createElement('img');
-            thumbnail.className = 'video-thumbnail';
-            thumbnail.src = result.thumbnail || 'placeholder.jpg';
-            thumbnail.alt = result.title || 'Video thumbnail';
-            thumbnail.onerror = () => {
-                thumbnail.src = 'placeholder.jpg';
-            };
-            
-            // Create info section
-            const info = document.createElement('div');
-            info.className = 'video-info';
-            
-            // Create title with link
-            const title = document.createElement('a');
-            title.className = 'video-title';
-            title.href = result.url;
-            title.target = '_blank';
-            title.textContent = result.title || 'Untitled Video';
-            
-            // Create description
-            const description = document.createElement('div');
-            description.className = 'video-description';
-            description.textContent = result.description || '';
-            
-            // Create source
-            const source = document.createElement('div');
-            source.className = 'video-source';
-            source.textContent = `Source: ${new URL(result.source).hostname}`;
-            
-            // Assemble card
-            info.appendChild(title);
-            info.appendChild(description);
-            info.appendChild(source);
-            card.appendChild(thumbnail);
-            card.appendChild(info);
-            
-            return card;
-        }
-
-        // Socket event handlers
-        socket.on('connect', () => {
-            console.log('Connected to server');
-            showStatus('Connected to server', 'success');
-        });
-
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-            showStatus('Disconnected from server', 'error');
-        });
-
-        socket.on('search_started', (data) => {
-            console.log('Search started:', data);
-            showStatus(`Searching for: ${data.query}`, 'info');
-        });
-
-        socket.on('progress_update', (data) => {
-            console.log('Progress:', data);
-            showStatus(data.message, 'info');
-        });
-
-        socket.on('link_found', (result) => {
-            console.log('Link found:', result);
-            if (result.url) {
-                const card = createVideoCard(result);
-                resultsDiv.appendChild(card);
-            }
-        });
-
-        socket.on('search_complete', (data) => {
-            console.log('Search complete:', data);
-            showStatus(`Search completed! Found ${data.total_links} links in ${data.duration} seconds`, 'success');
-            searchInProgress = false;
-            loader.style.display = 'none';
-        });
-
-        socket.on('error', (data) => {
-            console.error('Error:', data);
-            showStatus(`Error: ${data.message}`, 'error');
-            searchInProgress = false;
-            loader.style.display = 'none';
-        });
-
-        function submitWebsiteAndTags() {
-            const website = document.getElementById('website-input').value.trim();
-            const tags = document.getElementById('tag-input').value.trim().split(',');
-
-            // Emit website and tags
-            socket.emit('submit_website_and_tags', { website, tags });
-        }
-    </script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/js/client.js"></script>
 </body>
 </html>

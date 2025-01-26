@@ -132,6 +132,7 @@ class VideoSearchCrawler:
             # Add website search tasks
             if search_types.get('websites', True):
                 tasks.extend([
+                    # General search engines
                     self._search_google(self.main_topic),
                     self._search_bing(self.main_topic),
                     self._search_duckduckgo(self.main_topic),
@@ -139,11 +140,13 @@ class VideoSearchCrawler:
                     self._search_brave(self.main_topic),
                     self._search_qwant(self.main_topic),
                     self._search_ecosia(self.main_topic),
+                    # Advanced search engines
                     self._search_scholar(self.main_topic),
                     self._search_semantic(self.main_topic),
                     self._search_base(self.main_topic),
                     self._search_arxiv(self.main_topic),
                     self._search_github(self.main_topic),
+                    # Specialized advanced engines
                     self._search_wolfram(self.main_topic),
                     self._search_archive(self.main_topic),
                     self._search_metager(self.main_topic)

@@ -17,7 +17,7 @@ const flaskUrl = 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.
 
 // Enable CORS
 app.use(cors({
-    origin: "*",
+    origin: 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app', // Allow only your Vercel URL
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true
 }));

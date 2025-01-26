@@ -1,5 +1,5 @@
 // Get the server URL dynamically
-const serverUrl = window.location.protocol + '//' + window.location.hostname + ':5001';
+const serverUrl = 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app'; // Updated to the Vercel deployment URL
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {

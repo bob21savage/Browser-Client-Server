@@ -1,19 +1,26 @@
 // Get the server URL dynamically
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const serverUrl = isLocalhost ? 'http://127.0.0.1:5001' : window.location.origin;
+const productionUrl = 'https://browser-client-server.vercel.app';
+const localUrl = 'http://127.0.0.1:5001';
 
+// Determine if we're in production or development
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const serverUrl = isProduction ? productionUrl : localUrl;
+
+console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
 console.log('Connecting to server:', serverUrl);
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
+    autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling'], // Start with polling only for Vercel
-    forceNew: true,
-    path: '/socket.io/'
+    transports: ['polling'],
+    path: '/socket.io/',
+    withCredentials: true,
+    forceNew: true
 });
 
 // DOM Elements
@@ -36,20 +43,25 @@ const resultsPerPage = 5;
 
 // Socket.IO event handlers
 socket.on('connect', () => {
-    console.log('Connected to server');
+    console.log(`Successfully connected to ${serverUrl}`);
     updateStatus('Connected to server', 'success');
     if (searchButton) searchButton.disabled = false;
 });
 
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
-    updateStatus('Connection error: ' + error.message, 'error');
+    updateStatus(`Connection error: ${error.message}`, 'error');
 });
 
 socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
-    updateStatus('Disconnected from server: ' + reason, 'error');
+    updateStatus(`Disconnected: ${reason}`, 'error');
     if (searchButton) searchButton.disabled = true;
+});
+
+socket.on('error', (error) => {
+    console.error('Socket error:', error);
+    updateStatus(`Socket error: ${error.message}`, 'error');
 });
 
 socket.on('search_started', (data) => {

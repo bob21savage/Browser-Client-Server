@@ -1,16 +1,20 @@
 // Get the server URL dynamically
-const serverUrl = 'https://browser-client-server.vercel.app';  // Use production URL for deployment
+const serverUrl = process.env.NODE_ENV === 'production'
+    ? 'https://browser-client-server.vercel.app'
+    : 'http://127.0.0.1:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
-    autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling'],
-    withCredentials: true
+    transports: ['polling', 'websocket'],  // Try polling first, then upgrade to websocket
+    upgrade: true,
+    withCredentials: true,
+    forceNew: true,
+    path: '/socket.io'
 });
 
 // DOM Elements
@@ -33,26 +37,13 @@ const resultsPerPage = 5;
 
 // Socket.IO event handlers
 socket.on('connect', () => {
-    console.log('Successfully connected to the server');
+    console.log('Connected to Flask server');
     updateStatus('Connected to server', 'success');
     if (searchButton) searchButton.disabled = false;
 });
 
-socket.on('connect_error', (error) => {
-    console.error('Connection error:', error);
-    updateStatus(`Connection error: ${error.message}`, 'error');
-    // Log additional error details
-    if (error.data) {
-        console.error('Error data:', error.data);
-    }
-    // Log server response if available
-    if (error.request) {
-        console.error('Server response:', error.request);
-    }
-});
-
 socket.on('disconnect', () => {
-    console.log('Disconnected from server');
+    console.log('Disconnected from Flask server');
     updateStatus('Disconnected from server', 'error');
     if (searchButton) searchButton.disabled = true;
 });

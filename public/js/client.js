@@ -38,6 +38,11 @@ socket.on('connect', () => {
     if (searchButton) searchButton.disabled = false;
 });
 
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    updateStatus(`Connection error: ${error.message}`, 'error');
+});
+
 socket.on('disconnect', () => {
     console.log('Disconnected from Flask server');
     updateStatus('Disconnected from server', 'error');

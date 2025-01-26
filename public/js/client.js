@@ -3,6 +3,8 @@ const serverUrl = window.location.hostname === 'browser-client-server.vercel.app
     ? 'https://browser-client-server.vercel.app'
     : `http://${window.location.hostname}:5001`;  // Use the actual hostname instead of hardcoding localhost
 
+console.log('Connecting to server:', serverUrl);
+
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
     reconnection: true,
@@ -10,11 +12,16 @@ const socket = io(serverUrl, {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
     upgrade: true,
-    withCredentials: true,
-    forceNew: true
+    withCredentials: false,
+    forceNew: true,
+    autoConnect: true
 });
+
+// Store tags globally
+let allTags = new Set();
+let selectedTags = new Set();
 
 // DOM Elements
 const searchForm = document.getElementById('search-form');
@@ -25,6 +32,10 @@ const searchWebsites = document.getElementById('search-websites');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
+const recommendedTagsContainer = document.getElementById('recommended-tags');
+const popularTagsContainer = document.getElementById('popular-tags');
+const websiteInput = document.getElementById('website-input');
+const tagInput = document.getElementById('tag-input');
 
 let totalResults = 0;
 let videoResults = 0;
@@ -34,17 +45,117 @@ let allResults = [];
 let currentlyDisplayedResults = 0;
 const resultsPerPage = 5;
 
+// Tag handling functions
+function addTag(tag, container, isSelected = false) {
+    const tagElement = document.createElement('div');
+    tagElement.className = `tag ${isSelected ? 'selected' : ''}`;
+    tagElement.textContent = tag.trim();
+    tagElement.onclick = () => toggleTag(tagElement, tag.trim());
+    container.appendChild(tagElement);
+}
+
+function toggleTag(element, tag) {
+    if (selectedTags.has(tag)) {
+        selectedTags.delete(tag);
+        element.classList.remove('selected');
+    } else {
+        selectedTags.add(tag);
+        element.classList.add('selected');
+    }
+    // Update search with selected tags
+    if (searchInput.value) {
+        startSearch();
+    }
+}
+
+function updateRecommendedTags(searchQuery) {
+    // Clear previous recommendations
+    recommendedTagsContainer.innerHTML = '';
+    
+    // Find relevant tags based on search query
+    const relevantTags = Array.from(allTags).filter(tag => 
+        tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        searchQuery.toLowerCase().includes(tag.toLowerCase())
+    );
+    
+    // Display recommended tags
+    relevantTags.forEach(tag => addTag(tag, recommendedTagsContainer));
+}
+
+function submitWebsiteAndTags() {
+    const website = websiteInput.value.trim();
+    const tags = tagInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+    
+    if (!website) {
+        updateStatus('Please enter a website URL', 'error');
+        return;
+    }
+    
+    if (tags.length === 0) {
+        updateStatus('Please enter at least one tag', 'error');
+        return;
+    }
+    
+    // Add new tags to our collection
+    tags.forEach(tag => allTags.add(tag));
+    
+    // Emit website and tags to server
+    socket.emit('submit_website_and_tags', { website, tags });
+    
+    // Clear inputs
+    websiteInput.value = '';
+    tagInput.value = '';
+    
+    updateStatus('Website and tags submitted successfully!', 'success');
+    updatePopularTags();
+}
+
+function updatePopularTags() {
+    // Clear current popular tags
+    popularTagsContainer.innerHTML = '';
+    
+    // Get tag frequency
+    const tagFrequency = {};
+    Array.from(allTags).forEach(tag => {
+        tagFrequency[tag] = (tagFrequency[tag] || 0) + 1;
+    });
+    
+    // Sort tags by frequency
+    const sortedTags = Object.entries(tagFrequency)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10) // Show top 10 tags
+        .map(([tag]) => tag);
+    
+    // Display popular tags
+    sortedTags.forEach(tag => addTag(tag, popularTagsContainer));
+}
+
 // Socket.IO event handlers
 socket.on('connect', () => {
-    console.log('Connected to Flask server');
+    console.log('Connected to server');
     updateStatus('Connected to server', 'success');
     if (searchButton) searchButton.disabled = false;
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from Flask server');
+    console.log('Disconnected from server');
     updateStatus('Disconnected from server', 'error');
     if (searchButton) searchButton.disabled = true;
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    updateStatus('Connection error: ' + error.message, 'error');
+});
+
+socket.on('connect_timeout', () => {
+    console.error('Connection timeout');
+    updateStatus('Connection timeout', 'error');
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+    console.log('Attempting to reconnect:', attemptNumber);
+    updateStatus('Attempting to reconnect... (Attempt ' + attemptNumber + ')', 'info');
 });
 
 socket.on('search_started', (data) => {
@@ -452,7 +563,14 @@ if (searchForm) {
             return;
         }
         
-        socket.emit('search_query', { query, searchTypes });
+        // Include selected tags in search
+        const searchData = {
+            query,
+            tags: Array.from(selectedTags),
+            searchTypes
+        };
+        
+        socket.emit('search_query', searchData);
     });
 }
 

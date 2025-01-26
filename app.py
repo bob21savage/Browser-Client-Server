@@ -39,7 +39,8 @@ CORS(app, resources={
     r"/*": {
         "origins": [
             "http://127.0.0.1:5001",
-            "https://browser-client-server.vercel.app"
+            "https://browser-client-server.vercel.app",
+            "*"  # Allow all origins in development
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
@@ -52,16 +53,102 @@ socketio = SocketIO(
     app,
     cors_allowed_origins=[
         "http://127.0.0.1:5001",
-        "https://browser-client-server.vercel.app"
+        "https://browser-client-server.vercel.app",
+        "*"  # Allow all origins in development
     ],
-    async_mode=None,  # Let it choose the best mode
+    async_mode='threading',
     logger=True,
     engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
-    always_connect=True,
-    manage_session=False
+    manage_session=False,
+    always_connect=True
 )
+
+# Store websites and their tags in memory (you might want to use a database in production)
+websites_tags = {}
+tag_frequencies = {}
+
+@socketio.on('submit_website_and_tags')
+def handle_website_tags(data):
+    website = data.get('website')
+    tags = data.get('tags', [])
+    
+    if not website or not tags:
+        return
+    
+    # Store website and its tags
+    websites_tags[website] = tags
+    
+    # Update tag frequencies
+    for tag in tags:
+        tag_frequencies[tag] = tag_frequencies.get(tag, 0) + 1
+    
+    # Emit updated tag frequencies to all clients
+    socketio.emit('tag_frequencies_updated', {'frequencies': tag_frequencies})
+
+@socketio.on('search_query')
+def handle_search(data):
+    query = data.get('query', '')
+    selected_tags = set(data.get('tags', []))
+    
+    try:
+        # Get matching websites based on tags
+        matching_websites = set()
+        if selected_tags:
+            for website, tags in websites_tags.items():
+                if any(tag in selected_tags for tag in tags):
+                    matching_websites.add(website)
+        
+        # Perform the search with the original query
+        search_results = perform_search(query)
+        
+        # Filter results if we have matching websites
+        if matching_websites:
+            search_results = [
+                result for result in search_results 
+                if result.get('url') in matching_websites
+            ]
+        
+        # Add tags to results
+        for result in search_results:
+            url = result.get('url')
+            if url in websites_tags:
+                result['tags'] = websites_tags[url]
+        
+        # Send results to client
+        for result in search_results:
+            socketio.emit('search_results', {'result': result})
+        
+        # Get recommended tags based on the query
+        recommended_tags = get_recommended_tags(query)
+        socketio.emit('recommended_tags', {'tags': recommended_tags})
+        
+    except Exception as e:
+        logger.error(f"Search error: {str(e)}")
+        socketio.emit('error', {'message': str(e)})
+    
+    socketio.emit('search_complete')
+
+def get_recommended_tags(query):
+    # Get tags that are semantically related to the query
+    recommended = []
+    query_words = set(query.lower().split())
+    
+    for tag, frequency in tag_frequencies.items():
+        tag_words = set(tag.lower().split())
+        # Check for word overlap or if tag is substring of query or vice versa
+        if (query_words & tag_words or 
+            tag.lower() in query.lower() or 
+            query.lower() in tag.lower()):
+            recommended.append({
+                'tag': tag,
+                'frequency': frequency
+            })
+    
+    # Sort by frequency and return top 10
+    recommended.sort(key=lambda x: x['frequency'], reverse=True)
+    return [item['tag'] for item in recommended[:10]]
 
 @app.route('/')
 def index():
@@ -105,11 +192,13 @@ if __name__ == '__main__':
             logger.info("Starting Flask-SocketIO server...")
             socketio.run(
                 app,
-                host='0.0.0.0',  
+                host='0.0.0.0',
                 port=5001,
                 debug=True,
                 allow_unsafe_werkzeug=True,
-                use_reloader=False  
+                use_reloader=False,  # Disable reloader to avoid duplicate connections
+                log_output=True
             )
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
+        raise  # Re-raise the exception to see the full error

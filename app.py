@@ -64,6 +64,14 @@ socketio = SocketIO(
     manage_session=False
 )
 
+@app.route('/test_socket')
+async def test_socket():
+    try:
+        return "WebSocket connection test successful!", 200
+    except Exception as e:
+        logger.error(f"Error in test_socket route: {str(e)}")
+        return f"Error: {str(e)}", 500
+
 @app.route('/')
 async def index():
     try:

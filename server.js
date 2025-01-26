@@ -66,7 +66,7 @@ app.whenReady().then(() => {
     });
 
     expressApp.use(cors({
-        origin: 'https://browser-client-server.vercel.app', // Allow only your Vercel URL
+        origin: ['https://browser-client-server.vercel.app', 'http://localhost:3000'], // Allow only your Vercel URL and local development
         methods: ['GET', 'POST', 'OPTIONS'],
         credentials: true
     }));

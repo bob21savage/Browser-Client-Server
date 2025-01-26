@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
-const flaskUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL without port
+const flaskUrl = 'https://browser-client-server.vercel.app/api'; // Updated to the Vercel deployment URL with port
 
 // Enable CORS
 app.use(cors({

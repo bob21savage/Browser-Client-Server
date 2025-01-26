@@ -43,9 +43,8 @@ socket.on('connect', () => {
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from Flask server');
-    updateStatus('Disconnected from server', 'error');
-    if (searchButton) searchButton.disabled = true;
+    console.log('Disconnected from Flask server. Retrying...');
+    connectWithRetry();
 });
 
 socket.on('search_started', (data) => {
@@ -109,6 +108,11 @@ socket.on('connect_error', (error) => {
     retryCount++;
     setTimeout(retryConnection, 2000); // Use function reference instead of string
 });
+
+function connectWithRetry() {
+    console.log('Attempting to connect...');
+    socket.connect();
+}
 
 // Helper Functions
 function updateStatus(message, type = 'info') {

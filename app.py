@@ -43,14 +43,7 @@ CORS(app, resources={
     }
 })
 
-# Initialize SocketIO with minimal configuration
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='threading',
-    logger=True,
-    engineio_logger=True
-)
+socketio = SocketIO(app)
 
 @app.route('/')
 def index():
@@ -86,13 +79,4 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    logger.info("Starting Flask-SocketIO server...")
-    port = int(os.environ.get('PORT', 5001))
-    logger.info(f"Server will run on port {port}")
-    socketio.run(
-        app,
-        host='127.0.0.1',
-        port=port,
-        debug=True,
-        use_reloader=False
-    )
+    socketio.run(app, host='0.0.0.0', port=5001)

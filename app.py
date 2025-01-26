@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from pathlib import Path
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -65,9 +66,40 @@ socketio = SocketIO(
     always_connect=True
 )
 
-# Store websites and their tags in memory (you might want to use a database in production)
-websites_tags = {}
-tag_frequencies = {}
+# File to store websites and tags
+DATA_FILE = Path(current_dir) / 'data' / 'websites_tags.json'
+DATA_FILE.parent.mkdir(exist_ok=True)
+
+# Load existing data from file or initialize empty
+def load_data():
+    global websites_tags, tag_frequencies
+    try:
+        if DATA_FILE.exists():
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+                websites_tags = data.get('websites_tags', {})
+                tag_frequencies = data.get('tag_frequencies', {})
+        else:
+            websites_tags = {}
+            tag_frequencies = {}
+    except Exception as e:
+        logger.error(f"Error loading data: {str(e)}")
+        websites_tags = {}
+        tag_frequencies = {}
+
+# Save data to file
+def save_data():
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump({
+                'websites_tags': websites_tags,
+                'tag_frequencies': tag_frequencies
+            }, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving data: {str(e)}")
+
+# Load data when starting server
+load_data()
 
 @socketio.on('submit_website_and_tags')
 def handle_website_tags(data):
@@ -83,6 +115,9 @@ def handle_website_tags(data):
     # Update tag frequencies
     for tag in tags:
         tag_frequencies[tag] = tag_frequencies.get(tag, 0) + 1
+    
+    # Save to file
+    save_data()
     
     # Emit updated tag frequencies to all clients
     socketio.emit('tag_frequencies_updated', {'frequencies': tag_frequencies})
@@ -105,16 +140,29 @@ def handle_search(data):
         
         # Filter results if we have matching websites
         if matching_websites:
-            search_results = [
-                result for result in search_results 
-                if result.get('url') in matching_websites
-            ]
+            filtered_results = []
+            for result in search_results:
+                url = result.get('url')
+                # Check if the URL is in our tagged websites
+                if url in matching_websites:
+                    result['tags'] = websites_tags[url]
+                    filtered_results.append(result)
+                # Also include URLs from the search that match our tagged websites
+                elif any(tagged_url in url or url in tagged_url for tagged_url in matching_websites):
+                    matching_url = next(tagged_url for tagged_url in matching_websites 
+                                     if tagged_url in url or url in tagged_url)
+                    result['tags'] = websites_tags[matching_url]
+                    filtered_results.append(result)
+            search_results = filtered_results
         
-        # Add tags to results
+        # Add tags to results even if no tags were selected
         for result in search_results:
             url = result.get('url')
-            if url in websites_tags:
-                result['tags'] = websites_tags[url]
+            # Try to find matching URL in our tagged websites
+            matching_url = next((tagged_url for tagged_url in websites_tags 
+                               if tagged_url in url or url in tagged_url), None)
+            if matching_url:
+                result['tags'] = websites_tags[matching_url]
         
         # Send results to client
         for result in search_results:

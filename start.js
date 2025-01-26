@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
-const flaskUrl = process.env.FLASK_URL || 'http://localhost:5001';
+const flaskUrl = process.env.FLASK_URL || 'ws://localhost:3001'; // Update to the WebSocket server URL
 
 // Enable CORS
 app.use(cors({
@@ -69,7 +69,7 @@ socket.on('disconnect', () => {
 
 // Proxy configuration
 const proxyOptions = {
-    target: flaskUrl,
+    target: 'http://localhost:3001',
     changeOrigin: true,
     ws: true,  // Enable WebSocket proxy
     secure: false,

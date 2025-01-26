@@ -36,17 +36,21 @@ app = Flask(__name__,
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "https://browser-client-server.vercel.app/",
-            "https://browser-client-server-kmfr0gt0f-bob21savages-projects.vercel.app"
-        ],
+        "origins": "*",
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
+        "supports_credentials": True
     }
 })
 
 # Initialize SocketIO with minimal configuration
-socketio = SocketIO(app, cors_allowed_origins='https://browser-client-server.vercel.app/,https://browser-client-server-kmfr0gt0f-bob21savages-projects.vercel.app/')
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True
+)
 
 @app.route('/')
 def index():
@@ -87,7 +91,7 @@ if __name__ == '__main__':
     logger.info(f"Server will run on port {port}")
     socketio.run(
         app,
-        host='127.0.0.1',
+        host='0.0.0.0',
         port=port,
         debug=True,
         use_reloader=False

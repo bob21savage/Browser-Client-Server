@@ -1,10 +1,11 @@
 const { app, BrowserWindow } = require('electron');
 const express = require('express');
 const { exec } = require('child_process');
-const axios = require('axios');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const expressApp = express();
-const PORT = 5001; // Express server port
+const PORT = 3001; // Express server port
 
 // Path to the Python script
 const pythonScriptPath = 'C:\\Users\\bpier\\Desktop\\scrape\\scrape\\my app\\scrape\\scrape_upgrade.py';
@@ -34,30 +35,38 @@ function createWindow() {
         }
     });
 
-    win.loadURL(`http://0.0.0.0:${PORT}`); // Load your Express app
-}
-
-// Function to fetch data from the external server
-async function fetchData() {
-    try {
-        const response = await axios.get('https://browser-client-server-g620gwi30-bob21savages-projects.vercel.app/');
-        console.log('Data received:', response.data);
-    } catch (error) {
-        console.error('Error fetching data:', error);
-    }
+    win.loadURL(`http://localhost:${PORT}`); // Load your Express app
 }
 
 // This will be called when Electron is ready
 app.whenReady().then(() => {
     createWindow();
 
+    // Create an HTTP server using the Express app
+    const httpServer = http.createServer(expressApp);
+
+    // Initialize Socket.IO with the HTTP server
+    const io = new Server(httpServer);
+
+    // Handle WebSocket connections
+    io.on('connection', (socket) => {
+        console.log('A user connected');
+
+        // Handle disconnection
+        socket.on('disconnect', () => {
+            console.log('User disconnected');
+        });
+    });
+
     // Start Express server
     expressApp.use(express.static('templates'));
     expressApp.get('/', (req, res) => {
         res.sendFile(__dirname + '/templates/index.html');
     });
-    expressApp.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server is running on http://0.0.0.0:${PORT}`);
+
+    // Update the Express server to listen on the same port as the HTTP server
+    httpServer.listen(PORT, () => {
+        console.log(`Express server with WebSocket is running on http://localhost:${PORT}`);
     });
 
     app.on('window-all-closed', () => {
@@ -74,9 +83,6 @@ app.whenReady().then(() => {
 
     // Call the function to run the Python script
     runPythonScript();
-
-    // Call the fetchData function
-    fetchData();
 });
 
 app.on('window-all-closed', () => {

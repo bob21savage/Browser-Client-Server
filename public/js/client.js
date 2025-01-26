@@ -1,8 +1,8 @@
 // Get the server URL dynamically
-const serverUrl = 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app'; // Updated to the Vercel deployment URL
+const serverUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL
 
 // Connect to Socket.IO server
-const socket = io(serverUrl, {
+const socket = io('https://browser-client-server.vercel.app', {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,

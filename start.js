@@ -70,10 +70,10 @@ socket.on('disconnect', () => {
 
 // Proxy configuration
 const proxyOptions = {
-    target: 'http://localhost:5001',  // Updated target port
+    target: flaskUrl,  // Updated target URL
     changeOrigin: true,
     ws: true,  // Enable WebSocket proxy
-    secure: false,
+    secure: true,
     logLevel: 'debug',
     onError: (err, req, res) => {
         console.error('Proxy error:', err);

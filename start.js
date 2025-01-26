@@ -27,7 +27,7 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(express.static(join(__dirname, 'src')));
 
 // Socket.IO connection to Flask server
-const socket = io(flaskUrl, {
+const socket = io('https://browser-client-server.vercel.app', {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,

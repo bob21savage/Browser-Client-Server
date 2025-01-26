@@ -18,6 +18,8 @@ const socket = io(serverUrl, {
     reconnectionDelayMax: 5000,
     timeout: 20000,
     transports: ['polling'],
+    upgrade: false,  // Disable transport upgrade
+    rememberUpgrade: false,  // Don't remember transport upgrade
     path: '/socket.io/',
     withCredentials: true,
     forceNew: true
@@ -43,7 +45,7 @@ const resultsPerPage = 5;
 
 // Socket.IO event handlers
 socket.on('connect', () => {
-    console.log(`Successfully connected to ${serverUrl}`);
+    console.log(`Successfully connected to ${serverUrl} via ${socket.io.engine.transport.name}`);
     updateStatus('Connected to server', 'success');
     if (searchButton) searchButton.disabled = false;
 });

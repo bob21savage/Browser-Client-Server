@@ -31,12 +31,14 @@ const searchVideos = document.getElementById('search-videos');
 const searchWebsites = document.getElementById('search-websites');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
+const loaderElement = document.getElementById('loader');
 const statsElement = document.getElementById('stats');
 const recommendedTagsContainer = document.getElementById('recommended-tags');
 const popularTagsContainer = document.getElementById('popular-tags');
 const websiteInput = document.getElementById('website-input');
 const tagInput = document.getElementById('tag-input');
 
+let searchInProgress = false;
 let totalResults = 0;
 let videoResults = 0;
 let websiteResults = 0;
@@ -130,6 +132,159 @@ function updatePopularTags() {
     sortedTags.forEach(tag => addTag(tag, popularTagsContainer));
 }
 
+function updateSearchStats() {
+    if (statsElement) {
+        statsElement.innerHTML = `
+            <div class="search-stats">
+                <span>Total Results: ${totalResults}</span>
+                <span>Videos: ${videoResults}</span>
+                <span>Websites: ${websiteResults}</span>
+            </div>
+        `;
+    }
+}
+
+function addSearchResult(result) {
+    if (!result || !resultsContainer) return;
+
+    const resultElement = document.createElement('div');
+    resultElement.className = `result-item ${result.type || 'website'}`;
+
+    if (result.type === 'video') {
+        // Video result
+        const videoContent = `
+            <div class="video-thumbnail">
+                ${result.thumbnail ? `<img src="${result.thumbnail}" alt="Video thumbnail">` : ''}
+            </div>
+            <div class="video-info">
+                <h3 class="video-title">
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer">
+                        ${result.title || 'Untitled Video'}
+                    </a>
+                </h3>
+                <p class="video-description">${result.description || ''}</p>
+                <div class="video-metadata">
+                    <span class="video-source">${result.source || 'Unknown source'}</span>
+                    ${result.duration ? `<span class="video-duration">${result.duration}</span>` : ''}
+                </div>
+                <button class="watch-button" onclick="handleWatchClick(this.parentElement, '${result.url}')">
+                    Watch Video
+                </button>
+                <div class="video-container" style="display: none;"></div>
+            </div>
+        `;
+        resultElement.innerHTML = videoContent;
+        videoResults++;
+    } else {
+        // Website result
+        const websiteContent = `
+            <div class="website-icon">
+                ${result.favicon ? `<img src="${result.favicon}" alt="Website icon">` : ''}
+            </div>
+            <div class="website-info">
+                <h3 class="website-title">
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer">
+                        ${result.title || result.url}
+                    </a>
+                </h3>
+                <p class="website-description">${result.description || ''}</p>
+                <div class="website-metadata">
+                    <span class="website-url">${result.url}</span>
+                </div>
+            </div>
+        `;
+        resultElement.innerHTML = websiteContent;
+        websiteResults++;
+    }
+
+    // Add tags if present
+    if (result.tags && result.tags.length > 0) {
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'result-tags';
+        result.tags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'tag';
+            tagElement.textContent = tag;
+            tagElement.onclick = () => toggleTag(tagElement, tag);
+            tagsContainer.appendChild(tagElement);
+        });
+        resultElement.appendChild(tagsContainer);
+    }
+
+    resultsContainer.appendChild(resultElement);
+    totalResults++;
+    updateSearchStats();
+}
+
+function startSearch() {
+    if (searchInProgress) {
+        updateStatus('Search already in progress...', 'info');
+        return;
+    }
+
+    const query = searchInput.value.trim();
+    if (!query) {
+        updateStatus('Please enter a search query', 'error');
+        return;
+    }
+
+    // Check if at least one search type is selected
+    if (!searchVideos.checked && !searchWebsites.checked) {
+        updateStatus('Please select at least one search type (Videos or Websites)', 'error');
+        return;
+    }
+
+    clearResults();
+    showLoader();
+    searchInProgress = true;
+    totalResults = 0;
+    videoResults = 0;
+    websiteResults = 0;
+    updateStatus('Starting search...', 'info');
+
+    // Include selected tags and search types in search
+    const searchData = {
+        query,
+        tags: Array.from(selectedTags),
+        searchTypes: {
+            videos: searchVideos.checked,
+            websites: searchWebsites.checked
+        }
+    };
+
+    socket.emit('search_query', searchData);
+    updateRecommendedTags(query);
+}
+
+function clearResults() {
+    if (resultsContainer) {
+        resultsContainer.innerHTML = '';
+    }
+    if (statsElement) {
+        statsElement.innerHTML = '';
+    }
+    totalResults = 0;
+    videoResults = 0;
+    websiteResults = 0;
+}
+
+function showLoader() {
+    if (!loaderElement) return;
+    loaderElement.style.display = 'block';
+}
+
+function hideLoader() {
+    if (!loaderElement) return;
+    loaderElement.style.display = 'none';
+}
+
+function updateStatus(message, type = 'info') {
+    if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.className = `status status-${type}`;
+    }
+}
+
 // Socket.IO event handlers
 socket.on('connect', () => {
     console.log('Connected to server');
@@ -162,7 +317,7 @@ socket.on('search_started', (data) => {
     console.log('Search started:', data);
     updateStatus(data.message, 'info');
     clearResults();
-    showLoadingIndicator();
+    showLoader();
     if (searchButton) searchButton.disabled = true;
     totalResults = 0;
     videoResults = 0;
@@ -172,121 +327,40 @@ socket.on('search_started', (data) => {
 socket.on('new_result', (data) => {
     console.log('New result:', data);
     if (data.result) {
-        totalResults++;
-        if (data.result.type === 'video') {
-            videoResults++;
-        } else if (data.result.type === 'website') {
-            websiteResults++;
-        }
-        allResults.push(data.result);
-        if (allResults.length > currentlyDisplayedResults) {
-            displayResults(allResults);
-        }
-        updateSearchStats({ 
-            total: totalResults,
-            videos: videoResults,
-            websites: websiteResults,
-            query: data.query
-        });
+        addSearchResult(data.result);
     }
 });
 
 socket.on('search_completed', (data) => {
     console.log('Search completed:', data);
-    hideLoadingIndicator();
+    hideLoader();
     updateStatus(`Search completed. Found ${data.total} results.`, 'success');
-    updateSearchStats(data);
     if (searchButton) searchButton.disabled = false;
+    searchInProgress = false;
 });
 
 socket.on('search_error', (data) => {
     console.error('Search error:', data);
-    hideLoadingIndicator();
+    hideLoader();
     updateStatus(`Error: ${data.error}`, 'error');
     if (searchButton) searchButton.disabled = false;
+    searchInProgress = false;
 });
 
 // Helper Functions
-function updateStatus(message, type = 'info') {
-    if (statusElement) {
-        statusElement.textContent = message;
-        statusElement.className = `status status-${type}`;
-    }
-}
+function handleWatchClick(resultElement, url) {
+    const videoContainer = resultElement.querySelector('.video-container');
+    if (!videoContainer) return;
 
-function clearResults() {
-    if (resultsContainer) resultsContainer.innerHTML = '';
-    if (statsElement) statsElement.innerHTML = '';
-    totalResults = 0;
-    videoResults = 0;
-    websiteResults = 0;
-    allResults = [];
-    currentlyDisplayedResults = 0;
-}
-
-function showLoadingIndicator() {
-    if (!resultsContainer) return;
-    const loader = document.createElement('div');
-    loader.className = 'loader';
-    loader.id = 'loader';
-    resultsContainer.prepend(loader);
-}
-
-function hideLoadingIndicator() {
-    const loader = document.getElementById('loader');
-    if (loader) loader.remove();
-}
-
-function updateSearchStats(data) {
-    if (!statsElement) return;
-    statsElement.innerHTML = `
-        <div class="search-stats">
-            <span class="stat-item">Total Results: ${data.total || 0}</span>
-            <span class="stat-item">Videos: ${data.videos || 0}</span>
-            <span class="stat-item">Websites: ${data.websites || 0}</span>
-            ${data.query ? `<span class="stat-item">Query: ${data.query}</span>` : ''}
-        </div>
-    `;
-}
-
-function displayResults(results) {
-    const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear existing results
-    allResults = results;
-    currentlyDisplayedResults = 0;
-    
-    // Display first batch of results
-    showMoreResults();
-}
-
-function showMoreResults() {
-    const resultsContainer = document.getElementById('results');
-    const endIndex = Math.min(currentlyDisplayedResults + resultsPerPage, allResults.length);
-    
-    // Display the next batch of results
-    for (let i = currentlyDisplayedResults; i < endIndex; i++) {
-        const result = allResults[i];
-        const resultElement = createResultElement(result);
-        resultsContainer.appendChild(resultElement);
-    }
-    
-    // Update the counter
-    currentlyDisplayedResults = endIndex;
-    
-    // Remove existing Show More button if any
-    const existingButton = document.getElementById('show-more-btn');
-    if (existingButton) {
-        existingButton.remove();
-    }
-    
-    // Add Show More button if there are more results
-    if (currentlyDisplayedResults < allResults.length) {
-        const showMoreButton = document.createElement('button');
-        showMoreButton.id = 'show-more-btn';
-        showMoreButton.className = 'show-more-button';
-        showMoreButton.textContent = `Show More (${allResults.length - currentlyDisplayedResults} more results)`;
-        showMoreButton.onclick = showMoreResults;
-        resultsContainer.appendChild(showMoreButton);
+    const embedHtml = createVideoEmbed(url);
+    if (embedHtml) {
+        videoContainer.innerHTML = embedHtml + '<button class="close-button" onclick="closeVideo(this)">Close Video</button>';
+        videoContainer.style.display = 'block';
+    } else {
+        videoContainer.innerHTML = '<div class="error">Sorry, this video cannot be embedded.</div>';
+        if (confirm('Would you like to watch this video on the original website?')) {
+            window.open(url, '_blank');
+        }
     }
 }
 
@@ -358,219 +432,11 @@ function createVideoEmbed(url) {
     return null;
 }
 
-function createResultElement(result) {
-    const resultDiv = document.createElement('div');
-    resultDiv.className = 'result';
-    
-    // Create favicon element
-    const favicon = document.createElement('img');
-    favicon.src = result.favicon || 'favicon.ico';
-    favicon.className = 'favicon';
-    favicon.onerror = () => { favicon.src = 'favicon.ico'; };
-    
-    // Create title with link
-    const title = document.createElement('a');
-    title.href = result.url;
-    title.target = '_blank';
-    title.className = 'result-title';
-    title.textContent = result.title;
-    
-    // Create description
-    const description = document.createElement('p');
-    description.className = 'result-description';
-    description.textContent = result.description;
-    
-    // Create source/platform info
-    const source = document.createElement('span');
-    source.className = 'result-source';
-    source.textContent = `Source: ${result.source || result.platform || 'Unknown'}`;
-    
-    // Create video embed container (hidden by default)
-    const videoContainer = document.createElement('div');
-    videoContainer.className = 'video-container';
-    videoContainer.style.display = 'none';
-    
-    // Add Watch Now button for video results
-    if (result.type === 'video') {
-        const watchButton = document.createElement('button');
-        watchButton.className = 'watch-button';
-        watchButton.innerHTML = '<i class="fas fa-play"></i> Watch Now';
-        
-        // Create video embed when button is clicked
-        watchButton.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Toggle video display
-            if (videoContainer.style.display === 'none') {
-                handleWatchClick(resultDiv, result.url);
-            } else {
-                videoContainer.style.display = 'none';
-                videoContainer.innerHTML = '';
-                watchButton.innerHTML = '<i class="fas fa-play"></i> Watch Now';
-                console.log('Video embed closed');
-            }
-        };
-        
-        source.appendChild(watchButton);
-    }
-    
-    // Assemble the result element
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'result-header';
-    headerDiv.appendChild(favicon);
-    headerDiv.appendChild(title);
-    
-    resultDiv.appendChild(headerDiv);
-    resultDiv.appendChild(description);
-    resultDiv.appendChild(source);
-    resultDiv.appendChild(videoContainer);
-    
-    return resultDiv;
-}
-
-function handleWatchClick(resultElement, url) {
-    const videoContainer = resultElement.querySelector('.video-container');
-    if (!videoContainer) return;
-
-    const embedHtml = createVideoEmbed(url);
-    if (embedHtml) {
-        videoContainer.innerHTML = embedHtml + '<button class="close-button" onclick="closeVideo(this)">Close Video</button>';
-        videoContainer.style.display = 'block';
-    } else {
-        videoContainer.innerHTML = '<div class="error">Sorry, this video cannot be embedded.</div>';
-        if (confirm('Would you like to watch this video on the original website?')) {
-            window.open(url, '_blank');
-        }
-    }
-}
-
-function addSearchResult(result) {
-    if (!resultsContainer || !result) return;
-    
-    const resultElement = document.createElement('div');
-    resultElement.className = `result-item ${result.type}`;
-    
-    if (result.type === 'video') {
-        // Add video embed or thumbnail
-        const embedHtml = createVideoEmbed(result.url);
-        if (embedHtml) {
-            const embedContainer = document.createElement('div');
-            embedContainer.className = 'video-embed';
-            embedContainer.innerHTML = embedHtml;
-            resultElement.appendChild(embedContainer);
-        } else if (result.thumbnail) {
-            const thumbnail = document.createElement('img');
-            thumbnail.src = result.thumbnail;
-            thumbnail.alt = result.title || 'Video thumbnail';
-            thumbnail.className = 'result-thumbnail';
-            resultElement.appendChild(thumbnail);
-        }
-        
-        // Add title and link
-        const titleLink = document.createElement('a');
-        titleLink.href = result.url;
-        titleLink.textContent = result.title || 'Untitled Video';
-        titleLink.target = '_blank';
-        titleLink.rel = 'noopener noreferrer';
-        titleLink.className = 'result-title';
-        resultElement.appendChild(titleLink);
-        
-        // Add description if available
-        if (result.description) {
-            const description = document.createElement('p');
-            description.className = 'result-description';
-            description.textContent = result.description;
-            resultElement.appendChild(description);
-        }
-        
-        // Add metadata
-        const metadata = document.createElement('div');
-        metadata.className = 'result-metadata';
-        metadata.innerHTML = `
-            ${result.duration ? `<span>Duration: ${result.duration}</span>` : ''}
-            ${result.platform ? `<span>Platform: ${result.platform}</span>` : ''}
-        `;
-        resultElement.appendChild(metadata);
-    } else if (result.type === 'website') {
-        // Add website icon
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'website-icon';
-        if (result.favicon) {
-            const icon = document.createElement('img');
-            icon.src = result.favicon;
-            icon.alt = 'Website icon';
-            iconContainer.appendChild(icon);
-        }
-        resultElement.appendChild(iconContainer);
-        
-        // Add website content
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'website-content';
-        
-        // Add title and link
-        const titleLink = document.createElement('a');
-        titleLink.href = result.url;
-        titleLink.textContent = result.title || result.url;
-        titleLink.target = '_blank';
-        titleLink.rel = 'noopener noreferrer';
-        titleLink.className = 'result-title';
-        contentContainer.appendChild(titleLink);
-        
-        // Add URL
-        const urlText = document.createElement('div');
-        urlText.className = 'website-url';
-        urlText.textContent = result.url;
-        contentContainer.appendChild(urlText);
-        
-        // Add description if available
-        if (result.description) {
-            const description = document.createElement('p');
-            description.className = 'result-description';
-            description.textContent = result.description;
-            contentContainer.appendChild(description);
-        }
-        
-        resultElement.appendChild(contentContainer);
-    }
-    
-    resultsContainer.appendChild(resultElement);
-}
-
 // Event Listeners
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const query = searchInput.value.trim();
-        
-        if (!query) {
-            updateStatus('Please enter a search query', 'error');
-            return;
-        }
-        
-        if (!socket.connected) {
-            updateStatus('Not connected to server. Please wait...', 'error');
-            return;
-        }
-        
-        const searchTypes = {
-            videos: searchVideos.checked,
-            websites: searchWebsites.checked
-        };
-        
-        if (!searchTypes.videos && !searchTypes.websites) {
-            updateStatus('Please select at least one search type (Videos or Websites)', 'error');
-            return;
-        }
-        
-        // Include selected tags in search
-        const searchData = {
-            query,
-            tags: Array.from(selectedTags),
-            searchTypes
-        };
-        
-        socket.emit('search_query', searchData);
+        startSearch();
     });
 }
 

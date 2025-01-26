@@ -103,6 +103,26 @@
             font-size: 12px;
             color: #006621;
         }
+        #loader {
+            display: none;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+        #loader::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .tag-form {
             margin-top: 20px;
             padding: 15px;
@@ -137,11 +157,118 @@
             background: #007bff;
             color: white;
         }
-        .loader {
-            display: none;
+        
+        .search-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 0 10px;
+        }
+        .search-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .result-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-item.video {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+        }
+        .video-thumbnail img {
             width: 100%;
-            text-align: center;
-            padding: 20px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .video-info, .website-info {
+            flex: 1;
+        }
+        .video-title, .website-title {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .video-title a, .website-title a {
+            color: #1a0dab;
+            text-decoration: none;
+        }
+        .video-title a:hover, .website-title a:hover {
+            text-decoration: underline;
+        }
+        .video-description, .website-description {
+            color: #545454;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .video-metadata, .website-metadata {
+            font-size: 12px;
+            color: #006621;
+        }
+        .video-container {
+            margin-top: 15px;
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .watch-button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: #cc0000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .watch-button:hover {
+            background: #990000;
+        }
+        .close-button {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            padding: 5px 10px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .website-icon img {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .search-stats {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            gap: 15px;
+        }
+        .search-stats span {
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
@@ -150,11 +277,16 @@
         <div class="main-content">
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Enter your search query...">
+                <div class="search-options">
+                    <label><input type="checkbox" id="search-videos" checked> Videos</label>
+                    <label><input type="checkbox" id="search-websites" checked> Websites</label>
+                </div>
                 <button onclick="startSearch()">Search</button>
             </div>
             <div id="status"></div>
+            <div id="loader"></div>
+            <div id="stats"></div>
             <div id="results"></div>
-            <div class="loader">Loading...</div>
         </div>
         
         <div class="sidebar">

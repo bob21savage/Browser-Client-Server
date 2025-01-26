@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from pathlib import Path
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +16,7 @@ if scrape_dir not in sys.path:
 
 from flask import Flask, send_from_directory, send_file
 from flask_cors import CORS
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from scrape_upgrade import setup_routes
 
 # When frozen by PyInstaller, the path to the resources is different
@@ -54,7 +55,7 @@ socketio = SocketIO(
         "http://127.0.0.1:5001",
         "https://browser-client-server.vercel.app"
     ],
-    async_mode=None,  # Let it choose the best mode
+    async_mode='eventlet',  # Use eventlet for async support
     logger=True,
     engineio_logger=True,
     ping_timeout=60,
@@ -64,13 +65,13 @@ socketio = SocketIO(
 )
 
 @app.route('/')
-def index():
+async def index():
     try:
         logger.info("Serving index.html")
         index_path = os.path.join(static_folder, 'index.html')
         logger.debug(f"Index path: {index_path}")
         if os.path.exists(index_path):
-            return send_file(index_path)
+            return await send_file(index_path)
         else:
             logger.error(f"index.html not found at {index_path}")
             return "Error: index.html not found", 404
@@ -79,13 +80,13 @@ def index():
         return f"Error: {str(e)}", 500
 
 @app.route('/<path:path>')
-def serve_static(path):
+async def serve_static(path):
     try:
         logger.info(f"Serving static file: {path}")
         file_path = os.path.join(static_folder, path)
         logger.debug(f"Full file path: {file_path}")
         if os.path.exists(file_path):
-            return send_file(file_path)
+            return await send_file(file_path)
         else:
             logger.error(f"File not found: {file_path}")
             return f"File not found: {path}", 404

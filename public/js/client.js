@@ -41,6 +41,14 @@ socket.on('connect', () => {
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
     updateStatus(`Connection error: ${error.message}`, 'error');
+    // Log additional error details
+    if (error.data) {
+        console.error('Error data:', error.data);
+    }
+    // Log server response if available
+    if (error.request) {
+        console.error('Server response:', error.request);
+    }
 });
 
 socket.on('disconnect', () => {

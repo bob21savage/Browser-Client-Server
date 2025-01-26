@@ -113,6 +113,16 @@ pip install -r requirements.txt
 
 ### Usage
 
+1. Run the Electron application:
+```bash
+& "c:/Users/bpier/Downloads/scrape/scrape/scrape/my app/scrape/node_modules/.bin/electron" "c:/Users/bpier/Downloads/scrape/scrape/scrape/my app/scrape/server.cjs"
+```
+
+2. Open your web browser and go to:
+```
+http://localhost:3000
+```
+
 Here is a simple example of how to use these libraries to embed and play a video:
 
 ```python
@@ -193,6 +203,18 @@ If you get browser driver errors:
 - html5lib
 - flask
 - flask_socketio
+
+## Electron App Setup
+
+### Ensure the UI Loads
+
+1. Make sure the HTML file (e.g., `index.html`) exists in the `templates` directory.
+2. The server should load the HTML file with the following line:
+   ```javascript
+   res.sendFile(__dirname + '/templates/index.html');
+   ```
+3. Open the developer tools in the Electron app to check for any errors in the console.
+4. Verify that the server is running without errors and listening on the correct port.
 
 ## Note
 

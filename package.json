@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "electron": "^34.0.1",
     "express": "^4.18.0",
     "http-proxy-middleware": "^2.0.6",
     "open": "^9.1.0",
@@ -37,7 +38,6 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
-    "electron": "^33.2.1",
     "nodemon": "^2.0.15"
   },
   "keywords": [

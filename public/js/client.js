@@ -1,15 +1,15 @@
 // Get the server URL dynamically
-const serverUrl = 'http://127.0.0.1:5001';  // Use localhost for development
+const serverUrl = 'https://browser-client-server.vercel.app';  // Use production URL for deployment
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
+    autoConnect: true,
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['websocket', 'polling'],
-    upgrade: true,
+    transports: ['polling'],
     withCredentials: true
 });
 
@@ -33,7 +33,7 @@ const resultsPerPage = 5;
 
 // Socket.IO event handlers
 socket.on('connect', () => {
-    console.log('Connected to Flask server');
+    console.log('Successfully connected to the server');
     updateStatus('Connected to server', 'success');
     if (searchButton) searchButton.disabled = false;
 });
@@ -44,7 +44,7 @@ socket.on('connect_error', (error) => {
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from Flask server');
+    console.log('Disconnected from server');
     updateStatus('Disconnected from server', 'error');
     if (searchButton) searchButton.disabled = true;
 });

@@ -1,17 +1,17 @@
 // Get the server URL dynamically
-const serverUrl = 'http://localhost:5001';  // Use localhost for development
+const serverUrl = 'https://browser-client-server.vercel.app';  // Use Vercel deployment URL
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
     transports: ['polling', 'websocket'],
     upgrade: true,
-    withCredentials: false,  // Changed to false for local development
-    forceNew: true
+    forceNew: true,
+    path: '/socket.io/'
 });
 
 // DOM Elements

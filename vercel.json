@@ -16,6 +16,10 @@
             "dest": "app.py"
         },
         {
+            "src": "/public/(.*)",
+            "dest": "/public/$1"
+        },
+        {
             "src": "/(.*)",
             "dest": "app.py"
         }

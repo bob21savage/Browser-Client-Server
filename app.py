@@ -30,19 +30,30 @@ static_folder = os.path.join(base_dir, 'public')
 logger.info(f"Static folder path: {static_folder}")
 
 app = Flask(__name__, 
-           static_folder=static_folder,
+           static_folder='public',
            static_url_path='')
 
 # Configure CORS
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": ["https://browser-client-server.vercel.app", "http://localhost:5001"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
 
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    cors_allowed_origins=["https://browser-client-server.vercel.app", "http://localhost:5001"],
     async_mode='threading',
     logger=True,
-    engineio_logger=True
+    engineio_logger=True,
+    ping_timeout=60000,
+    ping_interval=25000,
+    manage_session=False,
+    always_connect=True
 )
 
 @app.route('/')
@@ -79,11 +90,20 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    logger.info("Starting Flask-SocketIO server...")
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=5001,
-        debug=True,
-        allow_unsafe_werkzeug=True  # Add this for development
-    )
+    try:
+        if os.environ.get('VERCEL'):
+            # Running on Vercel
+            app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
+        else:
+            # Local development
+            logger.info("Starting Flask-SocketIO server...")
+            socketio.run(
+                app,
+                host='127.0.0.1',
+                port=5001,
+                debug=True,
+                allow_unsafe_werkzeug=True,
+                use_reloader=False
+            )
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}")

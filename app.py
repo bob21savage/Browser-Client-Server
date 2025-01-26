@@ -29,14 +29,15 @@ else:
 static_folder = os.path.join(base_dir, 'public')
 logger.info(f"Static folder path: {static_folder}")
 
+# Initialize Flask app
 app = Flask(__name__, 
            static_folder='public',
            static_url_path='')
 
-# Configure CORS
+# Configure CORS properly
 CORS(app, resources={
     r"/*": {
-        "origins": ["https://browser-client-server.vercel.app", "http://localhost:5001"],
+        "origins": ["https://browser-client-server.vercel.app", "http://localhost:5001", "http://127.0.0.1:5001"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -46,14 +47,15 @@ CORS(app, resources={
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["https://browser-client-server.vercel.app", "http://localhost:5001"],
+    cors_allowed_origins=["https://browser-client-server.vercel.app", "http://localhost:5001", "http://127.0.0.1:5001"],
     async_mode='threading',
     logger=True,
     engineio_logger=True,
     ping_timeout=60000,
     ping_interval=25000,
     manage_session=False,
-    always_connect=True
+    always_connect=True,
+    transports=['websocket', 'polling']
 )
 
 @app.route('/')
@@ -93,7 +95,11 @@ if __name__ == '__main__':
     try:
         if os.environ.get('VERCEL'):
             # Running on Vercel
-            app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
+            app.run(
+                host='0.0.0.0',
+                port=int(os.environ.get('PORT', 5001)),
+                debug=False
+            )
         else:
             # Local development
             logger.info("Starting Flask-SocketIO server...")

@@ -14,6 +14,9 @@ const socket = io(serverUrl, {
     forceNew: true
 });
 
+let retryCount = 0; // Ensure retryCount is defined
+const maxRetries = 5;
+
 // DOM Elements
 const searchForm = document.getElementById('search-form');
 const searchInput = document.getElementById('search-input');

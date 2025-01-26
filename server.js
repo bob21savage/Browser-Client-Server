@@ -47,7 +47,13 @@ app.whenReady().then(() => {
     const httpServer = http.createServer(expressApp);
 
     // Initialize Socket.IO with the HTTP server
-    const io = new Server(httpServer);
+    const io = new Server(httpServer, {
+        cors: {
+            origin: ['https://browser-client-server.vercel.app', 'http://localhost:3000'], // Allow only your Vercel URL and local development
+            methods: ['GET', 'POST', 'OPTIONS'],
+            credentials: true
+        }
+    });
 
     // Handle WebSocket connections
     io.on('connection', (socket) => {

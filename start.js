@@ -74,14 +74,14 @@ const proxyOptions = {
     ws: true,  // Enable WebSocket proxy
     secure: false,
     logLevel: 'debug',
-    onError: (err, req, res) => {
+    onError: (err) => {
         console.error('Proxy error:', err);
         res.writeHead(500, {
             'Content-Type': 'text/plain'
         });
         res.end('Proxy error: ' + err);
     },
-    onProxyReq: (proxyReq, req, res) => {
+    onProxyReq: (proxyReq) => {
         // Add custom headers if needed
         proxyReq.setHeader('X-Special-Proxy-Header', 'video-search');
     }
@@ -96,7 +96,7 @@ app.use('/socket.io', createProxyMiddleware({
 app.use('/api', createProxyMiddleware(proxyOptions));
 
 // Serve index.html for all other routes
-app.get('*', (req, res) => {
+app.get('*', (_, res) => {
     res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 

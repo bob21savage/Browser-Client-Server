@@ -65,9 +65,8 @@ app.whenReady().then(() => {
         res.sendFile(__dirname + '/templates/index.html');
     });
 
-    // Update the CORS configuration to allow requests only from the Vercel deployment URL
     expressApp.use(cors({
-        origin: 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app', // Allow only your Vercel URL
+        origin: 'https://browser-client-server.vercel.app', // Allow only your Vercel URL
         methods: ['GET', 'POST', 'OPTIONS'],
         credentials: true
     }));

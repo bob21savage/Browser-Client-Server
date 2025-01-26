@@ -32,13 +32,13 @@
     "http-proxy-middleware": "^2.0.6",
     "open": "^9.1.0",
     "socket.io": "^4.7.2",
-    "socket.io-client": "^4.5.0"
+    "socket.io-client": "^4.5.0",
+    "video-link-scraper": "file:"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
     "electron": "^33.2.1",
-    "nodemon": "^2.0.15",
-    "pkg": "^5.8.1"
+    "nodemon": "^2.0.15"
   },
   "keywords": [
     "web",

@@ -2,7 +2,7 @@
 const serverUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL
 
 // Connect to Socket.IO server
-const socket = io('https://browser-client-server.vercel.app', {
+const socket = io(serverUrl, {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,

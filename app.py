@@ -87,7 +87,7 @@ setup_routes(app, socketio)
 
 if __name__ == '__main__':
     logger.info("Starting Flask-SocketIO server...")
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 5001))  # Updated port
     logger.info(f"Server will run on port {port}")
     socketio.run(
         app,

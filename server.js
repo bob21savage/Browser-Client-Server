@@ -5,7 +5,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const expressApp = express();
-const PORT = 3001; // Express server port
+const PORT = 5001; // Updated Express server port
 
 // Path to the Python script
 const pythonScriptPath = 'C:\\Users\\bpier\\Desktop\\scrape\\scrape\\my app\\scrape\\scrape_upgrade.py';

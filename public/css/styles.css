@@ -1,0 +1,4 @@
+/* Example of optimized transform usage */
+.element {
+    transform: translate3d(0, 0, 0); /* Use translate3d for better performance */
+}

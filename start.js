@@ -69,7 +69,7 @@ socket.on('disconnect', () => {
 
 // Proxy configuration
 const proxyOptions = {
-    target: 'http://localhost:3001',
+    target: 'http://localhost:5001',  // Updated target port
     changeOrigin: true,
     ws: true,  // Enable WebSocket proxy
     secure: false,

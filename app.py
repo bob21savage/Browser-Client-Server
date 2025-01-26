@@ -105,11 +105,11 @@ if __name__ == '__main__':
             logger.info("Starting Flask-SocketIO server...")
             socketio.run(
                 app,
-                host='127.0.0.1',
+                host='0.0.0.0',  
                 port=5001,
                 debug=True,
                 allow_unsafe_werkzeug=True,
-                use_reloader=False  # Disable reloader to avoid duplicate connections
+                use_reloader=False  
             )
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")

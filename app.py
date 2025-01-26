@@ -34,16 +34,16 @@ app = Flask(__name__,
            static_url_path='')
 
 # Configure CORS
-CORS(app, resources={
-    r"/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"],
-        "supports_credentials": True
-    }
-})
+CORS(app)
 
-socketio = SocketIO(app)
+# Initialize SocketIO with proper configuration
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True
+)
 
 @app.route('/')
 def index():
@@ -79,4 +79,11 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5001)
+    logger.info("Starting Flask-SocketIO server...")
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5001,
+        debug=True,
+        allow_unsafe_werkzeug=True  # Add this for development
+    )

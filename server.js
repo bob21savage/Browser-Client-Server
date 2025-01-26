@@ -71,6 +71,12 @@ app.whenReady().then(() => {
         credentials: true
     }));
 
+    expressApp.use((req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        next();
+    });
+
     // Update the Express server to listen on the same port as the HTTP server
     httpServer.listen(PORT, () => {
         console.log(`Express server with WebSocket is running on http://localhost:${PORT}`);

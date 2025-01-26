@@ -36,10 +36,9 @@ app = Flask(__name__,
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": ["https://browser-client-server.vercel.app/"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
-        "supports_credentials": True
     }
 })
 

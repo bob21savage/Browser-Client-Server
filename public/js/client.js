@@ -1,7 +1,7 @@
 // Get the server URL dynamically
 const serverUrl = 'https://browser-client-server.vercel.app/';
 // Connect to Socket.IO server
-const socket = io('https://browser-client-server.vercel.app/');
+const socket = io('https://browser-client-server.vercel.app/', { reconnection: true });
 
 // DOM Elements
 const searchForm = document.getElementById('search-form');

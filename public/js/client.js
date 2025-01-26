@@ -1,20 +1,19 @@
 // Get the server URL dynamically
-const serverUrl = process.env.NODE_ENV === 'production'
+const serverUrl = window.location.hostname === 'browser-client-server.vercel.app'
     ? 'https://browser-client-server.vercel.app'
     : 'http://127.0.0.1:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling', 'websocket'],  // Try polling first, then upgrade to websocket
+    transports: ['websocket', 'polling'],  // Try websocket first, then fallback to polling
     upgrade: true,
     withCredentials: true,
-    forceNew: true,
-    path: '/socket.io'
+    forceNew: true
 });
 
 // DOM Elements

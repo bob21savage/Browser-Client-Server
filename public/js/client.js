@@ -1,21 +1,20 @@
 // Get the server URL dynamically
-const serverUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL
+const serverUrl = window.location.hostname === 'browser-client-server.vercel.app'
+    ? 'https://browser-client-server.vercel.app'
+    : 'http://127.0.0.1:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
-const socket = io('https://browser-client-server.vercel.app', {
+const socket = io(serverUrl, {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling', 'websocket'],  // Try polling first, then upgrade to websocket
+    transports: ['websocket', 'polling'],  // Try websocket first, then fallback to polling
     upgrade: true,
     withCredentials: true,
     forceNew: true
 });
-
-let retryCount = 0; // Ensure retryCount is defined
-const maxRetries = 5;
 
 // DOM Elements
 const searchForm = document.getElementById('search-form');
@@ -43,8 +42,9 @@ socket.on('connect', () => {
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from Flask server. Retrying...');
-    connectWithRetry();
+    console.log('Disconnected from Flask server');
+    updateStatus('Disconnected from server', 'error');
+    if (searchButton) searchButton.disabled = true;
 });
 
 socket.on('search_started', (data) => {
@@ -94,25 +94,6 @@ socket.on('search_error', (data) => {
     updateStatus(`Error: ${data.error}`, 'error');
     if (searchButton) searchButton.disabled = false;
 });
-
-// Ensure no use of eval(), new Function(), setTimeout([string], ...), or setInterval([string], ...)
-// Replace any such usage with safer alternatives
-
-// Example of replacing setTimeout with a function reference
-function retryConnection() {
-    connectWithRetry();
-}
-
-socket.on('connect_error', (error) => {
-    console.error('Connection error:', error);
-    retryCount++;
-    setTimeout(retryConnection, 2000); // Use function reference instead of string
-});
-
-function connectWithRetry() {
-    console.log('Attempting to connect...');
-    socket.connect();
-}
 
 // Helper Functions
 function updateStatus(message, type = 'info') {

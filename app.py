@@ -29,27 +29,38 @@ else:
 static_folder = os.path.join(base_dir, 'public')
 logger.info(f"Static folder path: {static_folder}")
 
+# Initialize Flask app
 app = Flask(__name__, 
-           static_folder=static_folder,
+           static_folder='public',
            static_url_path='')
 
-# Configure CORS
+# Configure CORS properly
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": [
+            "http://127.0.0.1:5001",
+            "https://browser-client-server.vercel.app"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
     }
 })
 
-# Initialize SocketIO with minimal configuration
+# Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
-    async_mode='threading',
+    cors_allowed_origins=[
+        "http://127.0.0.1:5001",
+        "https://browser-client-server.vercel.app"
+    ],
+    async_mode=None,  # Let it choose the best mode
     logger=True,
-    engineio_logger=True
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25,
+    always_connect=True,
+    manage_session=False
 )
 
 @app.route('/')
@@ -86,13 +97,19 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    logger.info("Starting Flask-SocketIO server...")
-    port = int(os.environ.get('PORT', 3000))  # Updated port to 3000
-    logger.info(f"Server will run on port {port}")
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=port,
-        debug=True,
-        use_reloader=False
-    )
+    try:
+        # Check if running on Vercel
+        if os.environ.get('VERCEL'):
+            app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
+        else:
+            logger.info("Starting Flask-SocketIO server...")
+            socketio.run(
+                app,
+                host='0.0.0.0',  
+                port=5001,
+                debug=True,
+                allow_unsafe_werkzeug=True,
+                use_reloader=False  
+            )
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}")

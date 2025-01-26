@@ -1,0 +1,149 @@
+Metadata-Version: 2.2
+Name: video-link-scraper
+Version: 0.1.0
+Summary: A real-time video link scraper with WebSocket support
+Home-page: https://github.com/yourusername/video-link-scraper
+Author: Your Name
+Author-email: Your Name <your.email@example.com>
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: flask>=2.0.0
+Requires-Dist: flask-socketio>=5.3.0
+Requires-Dist: flask-cors>=4.0.0
+Requires-Dist: gevent>=24.11.1
+Requires-Dist: gevent-websocket>=0.10.1
+Requires-Dist: requests>=2.31.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: python-engineio>=4.8.0
+Requires-Dist: python-socketio>=5.10.0
+Requires-Dist: zope.event>=5.0
+Requires-Dist: zope.interface>=7.2
+Requires-Dist: greenlet>=3.1.1
+Dynamic: author
+Dynamic: home-page
+Dynamic: requires-python
+
+# Video Link Scraper
+
+A real-time video link scraper with WebSocket support that searches multiple video platforms and provides live updates.
+
+## Features
+
+- Real-time search updates via WebSocket
+- Searches multiple video platforms including:
+  - EntireWeb
+  - Bing Videos
+  - Vimeo
+  - Dailymotion
+  - Twitch
+  - TikTok
+  - Facebook Watch
+  - And more...
+- Modern web interface with video thumbnails and descriptions
+- Asynchronous processing with gevent
+- Cross-origin resource sharing (CORS) support
+
+## Requirements
+
+- Python 3.8 or higher
+- Node.js 14.0 or higher (for frontend development)
+
+## Dependencies
+
+### Python Packages
+
+```
+flask>=2.0.0
+flask-socketio>=5.3.0
+flask-cors>=4.0.0
+gevent>=24.11.1
+gevent-websocket>=0.10.1
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+python-engineio>=4.8.0
+python-socketio>=5.10.0
+zope.event>=5.0
+zope.interface>=7.2
+greenlet>=3.1.1
+```
+
+### Node.js Packages
+
+```json
+{
+  "dependencies": {
+    "socket.io-client": "^4.5.0",
+    "express": "^4.18.0"
+  }
+}
+```
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/video-link-scraper.git
+cd video-link-scraper
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install Python dependencies:
+```bash
+pip install -e .
+```
+
+4. Install Node.js dependencies:
+```bash
+npm install
+```
+
+## Usage
+
+1. Start the Python server:
+```bash
+python scrape_upgrade.py
+```
+
+2. Start the Node.js server:
+```bash
+node start.js
+```
+
+3. Open your web browser and navigate to:
+```
+http://localhost:3000
+```
+
+4. Enter a search query and watch as video links are discovered in real-time!
+
+## Development
+
+To run in development mode with debug enabled:
+
+```bash
+python scrape_upgrade.py --debug
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Flask-SocketIO for WebSocket support
+- Beautiful Soup for HTML parsing
+- Gevent for async processing

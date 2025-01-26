@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <div>
+        {% for video in videos %}
+            <h3>{{ video.title }}</h3>
+            <iframe src="{{ video.link }}" width="600" height="400" style="border: 1px solid black;"></iframe>
+            <p>{{ video.snippet }}</p>
+        {% endfor %}
+        {% for image in images %}
+            <h3>{{ image.title }}</h3>
+            <img src="{{ image.link }}" alt="{{ image.title }}" width="600" style="border: 1px solid black;" />
+        {% endfor %}
+        {% for audio in audios %}
+            <h3>{{ audio.title }}</h3>
+            <audio controls>
+                <source src="{{ audio.link }}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        {% endfor %}
+    </div>
+</body>
+</html>

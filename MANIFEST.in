@@ -1,0 +1,12 @@
+include README.md
+include LICENSE
+recursive-include static *
+recursive-include templates *
+recursive-include public *
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.pyo
+global-exclude .git*
+global-exclude venv/*
+global-exclude node_modules/*
+prune node_modules

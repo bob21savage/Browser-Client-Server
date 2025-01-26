@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-link-scraper"
+version = "0.1.0"
+description = "A real-time video link scraper with WebSocket support"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+dependencies = [
+    "flask>=2.0.0",
+    "flask-socketio>=5.3.0",
+    "flask-cors>=4.0.0",
+    "gevent>=24.11.1",
+    "gevent-websocket>=0.10.1",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "python-engineio>=4.8.0",
+    "python-socketio>=5.10.0",
+    "zope.event>=5.0",
+    "zope.interface>=7.2",
+    "greenlet>=3.1.1",
+    "eventlet",  # For better WebSocket support
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages]
+find = {}  # Scan the project directory for Python packages
+
+[tool.setuptools.package-data]
+"scrape" = ["templates/*", "static/*"]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "node_modules/*",
+    "*.pyc",
+    "__pycache__/*",
+    "*.pyo",
+    ".git*",
+    "venv/*"
+]

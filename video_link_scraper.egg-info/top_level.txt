@@ -1,0 +1,9 @@
+advanced_scraper
+backups
+cache
+instance
+node_modules
+public
+scrape
+src
+venv

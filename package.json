@@ -1,0 +1,50 @@
+{
+  "name": "video-link-scraper",
+  "version": "1.0.0",
+  "description": "A real-time video link scraper with WebSocket support",
+  "main": "start.js",
+  "type": "module",
+  "bin": "start.js",
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "node_modules/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist",
+    "options": [
+      "experimental-modules",
+      "no-warnings"
+    ]
+  },
+  "scripts": {
+    "start": "node start.js",
+    "dev": "nodemon start.js",
+    "dev:all": "concurrently \"python -m scrape.scrape_upgrade\" \"npm run dev\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx pkg ."
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.0",
+    "http-proxy-middleware": "^2.0.6",
+    "open": "^9.1.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.5.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "electron": "^33.2.1",
+    "nodemon": "^2.0.15",
+    "pkg": "^5.8.1"
+  },
+  "keywords": [
+    "web",
+    "scraping",
+    "crawler"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,8 @@
+flask>=3.0.0
+flask-socketio>=5.3.6
+flask-cors>=4.0.0
+aiohttp>=3.9.1
+beautifulsoup4>=4.12.2
+html2text>=2020.1.16
+requests>=2.31.0
+pyinstaller>=6.11.0

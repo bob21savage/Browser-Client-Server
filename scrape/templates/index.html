@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Link Scraper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #search-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status-info { background-color: #e3f2fd; color: #0d47a1; }
+        .status-success { background-color: #e8f5e9; color: #1b5e20; }
+        .status-error { background-color: #ffebee; color: #b71c1c; }
+        
+        #results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .video-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .video-thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+        .video-info {
+            padding: 15px;
+        }
+        .video-title {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a0dab;
+        }
+        .video-description {
+            font-size: 14px;
+            color: #545454;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .video-source {
+            font-size: 12px;
+            color: #006621;
+        }
+        .loader {
+            display: none;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+        .loader::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Link Scraper</h1>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Enter search query...">
+            <button onclick="startSearch()">Search</button>
+        </div>
+        <div id="status"></div>
+        <div id="loader" class="loader"></div>
+        <div id="results"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io('http://localhost:5001');
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        const loader = document.getElementById('loader');
+        let searchInProgress = false;
+
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status-${type}`;
+        }
+
+        function startSearch() {
+            if (searchInProgress) {
+                showStatus('Search already in progress...', 'info');
+                return;
+            }
+
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                showStatus('Please enter a search query', 'error');
+                return;
+            }
+
+            // Clear previous results
+            resultsDiv.innerHTML = '';
+            showStatus('Starting search...', 'info');
+            loader.style.display = 'block';
+            searchInProgress = true;
+
+            // Emit search query
+            socket.emit('search_query', { query });
+        }
+
+        function createVideoCard(result) {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            // Create thumbnail
+            const thumbnail = document.createElement('img');
+            thumbnail.className = 'video-thumbnail';
+            thumbnail.src = result.thumbnail || 'placeholder.jpg';
+            thumbnail.alt = result.title || 'Video thumbnail';
+            thumbnail.onerror = () => {
+                thumbnail.src = 'placeholder.jpg';
+            };
+            
+            // Create info section
+            const info = document.createElement('div');
+            info.className = 'video-info';
+            
+            // Create title with link
+            const title = document.createElement('a');
+            title.className = 'video-title';
+            title.href = result.url;
+            title.target = '_blank';
+            title.textContent = result.title || 'Untitled Video';
+            
+            // Create description
+            const description = document.createElement('div');
+            description.className = 'video-description';
+            description.textContent = result.description || '';
+            
+            // Create source
+            const source = document.createElement('div');
+            source.className = 'video-source';
+            source.textContent = `Source: ${new URL(result.source).hostname}`;
+            
+            // Assemble card
+            info.appendChild(title);
+            info.appendChild(description);
+            info.appendChild(source);
+            card.appendChild(thumbnail);
+            card.appendChild(info);
+            
+            return card;
+        }
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            showStatus('Connected to server', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            showStatus('Disconnected from server', 'error');
+        });
+
+        socket.on('search_started', (data) => {
+            console.log('Search started:', data);
+            showStatus(`Searching for: ${data.query}`, 'info');
+        });
+
+        socket.on('progress_update', (data) => {
+            console.log('Progress:', data);
+            showStatus(data.message, 'info');
+        });
+
+        socket.on('link_found', (result) => {
+            console.log('Link found:', result);
+            if (result.url) {
+                const card = createVideoCard(result);
+                resultsDiv.appendChild(card);
+            }
+        });
+
+        socket.on('search_complete', (data) => {
+            console.log('Search complete:', data);
+            showStatus(`Search completed! Found ${data.total_links} links in ${data.duration} seconds`, 'success');
+            searchInProgress = false;
+            loader.style.display = 'none';
+        });
+
+        socket.on('error', (data) => {
+            console.error('Error:', data);
+            showStatus(`Error: ${data.message}`, 'error');
+            searchInProgress = false;
+            loader.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

@@ -37,7 +37,7 @@ app = Flask(__name__,
 # Configure CORS properly
 CORS(app, resources={
     r"/*": {
-        "origins": ["https://browser-client-server.vercel.app", "http://localhost:5001", "http://127.0.0.1:5001"],
+        "origins": "*",  # Allow all origins, will be restricted by Socket.IO
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -47,7 +47,7 @@ CORS(app, resources={
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["https://browser-client-server.vercel.app", "http://localhost:5001", "http://127.0.0.1:5001"],
+    cors_allowed_origins="*",  # Allow all origins, more permissive for Vercel
     async_mode='threading',
     logger=True,
     engineio_logger=True,
@@ -55,7 +55,7 @@ socketio = SocketIO(
     ping_interval=25000,
     manage_session=False,
     always_connect=True,
-    transports=['websocket', 'polling']
+    transports=['polling']  # Start with polling only for Vercel
 )
 
 @app.route('/')

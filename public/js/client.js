@@ -1,7 +1,8 @@
 // Get the server URL dynamically
-const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:5001'
-    : 'https://browser-client-server.vercel.app';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const serverUrl = isLocalhost ? 'http://127.0.0.1:5001' : window.location.origin;
+
+console.log('Connecting to server:', serverUrl);
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
@@ -10,9 +11,9 @@ const socket = io(serverUrl, {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['websocket', 'polling'],
-    path: '/socket.io/',
-    forceNew: true
+    transports: ['polling'], // Start with polling only for Vercel
+    forceNew: true,
+    path: '/socket.io/'
 });
 
 // DOM Elements

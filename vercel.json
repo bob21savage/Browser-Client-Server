@@ -17,7 +17,8 @@
             "headers": {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Credentials": "true"
             }
         },
         {
@@ -26,7 +27,10 @@
         },
         {
             "src": "/(.*)",
-            "dest": "app.py"
+            "dest": "app.py",
+            "headers": {
+                "Access-Control-Allow-Origin": "*"
+            }
         }
     ],
     "env": {

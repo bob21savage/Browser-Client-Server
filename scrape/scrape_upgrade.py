@@ -1633,69 +1633,73 @@ class VideoSearchCrawler:
         return results[:100]
 
 def setup_routes(app, socketio):
-    crawler = VideoSearchCrawler("")
+    """Set up Flask routes and Socket.IO event handlers"""
     
-    @socketio.on('perform_search')
+    @socketio.on('connect')
+    def handle_connect():
+        logger.info('Client connected')
+        emit('connect', {'message': 'Connected to server'})
+    
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        logger.info('Client disconnected')
+    
+    @socketio.on('search_query')
     def handle_search(data):
-        query = data.get('query', '')
-        search_type = data.get('search_type', '')
-        
+        """Handle search request from client"""
         try:
-            if search_type == 'youtube_only':
-                # Search for 75 YouTube videos
-                results = crawler.search_youtube_videos(query, limit=75)
-                socketio.emit('search_results', {'results': results})
-            else:
-                # Regular search based on type
-                results = []
-                if search_type in ['videos', 'both']:
-                    video_results = crawler.search_videos(aiohttp.ClientSession(), query)
-                    results.extend(video_results)
-                if search_type in ['websites', 'both']:
-                    website_results = crawler.search_websites(aiohttp.ClientSession(), query)
-                    results.extend(website_results)
+            query = data.get('query', '').strip()
+            search_types = data.get('searchTypes', {'videos': True, 'websites': True})
+            
+            if not query:
+                emit('search_error', {'message': 'Please enter a search query'})
+                return
                 
-                socketio.emit('search_results', {'results': results})
+            if not any(search_types.values()):
+                emit('search_error', {'message': 'Please select at least one search type'})
+                return
+            
+            # Notify client that search has started
+            emit('search_started', {'message': f'Starting search for: {query}'})
+            
+            # Create crawler and run search
+            try:
+                crawler = VideoSearchCrawler(query)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                all_results = loop.run_until_complete(crawler.collect_results(search_types))
+                loop.close()
+                
+                # Process and emit results
+                processed_results = []
+                for result in all_results:
+                    processed_result = {
+                        'url': result.get('url', ''),
+                        'title': result.get('title', 'Untitled Result'),
+                        'platform': result.get('platform', 'Unknown'),
+                        'description': result.get('description', ''),
+                        'thumbnail': result.get('thumbnail', '') or result.get('favicon', ''),
+                        'source': result.get('source', 'Unknown'),
+                        'duration': result.get('duration', 'Unknown'),
+                        'type': result.get('type', 'Unknown')
+                    }
+                    processed_results.append(processed_result)
+                    # Emit each result as it's processed
+                    emit('new_result', {'result': processed_result, 'query': query})
+                    
+                # Notify client that search is complete
+                emit('search_completed', {
+                    'message': f'Search completed. Found {len(processed_results)} results.',
+                    'total': len(processed_results)
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in search: {str(e)}")
+                emit('search_error', {'message': f'Error during search: {str(e)}'})
                 
         except Exception as e:
-            logger.error(f"Search error: {str(e)}")
-            socketio.emit('search_error', {'message': str(e)})
-
-def search_youtube_videos(self, query, limit=75):
-    try:
-        results = []
-        search_url = f"https://www.youtube.com/results?search_query={quote(query)}&sp=CAASAhAB"
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.get(search_url) as response:
-                if response.status == 200:
-                    html_content = await response.text()
-                    soup = BeautifulSoup(html_content, 'html.parser')
-                    
-                    # Extract video information
-                    video_elements = soup.find_all('div', {'class': 'yt-lockup-video'})
-                    for element in video_elements[:limit]:
-                        video_id = element.get('data-context-item-id', '')
-                        if video_id:
-                            title = element.find('a', {'class': 'yt-uix-tile-link'}).text
-                            thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
-                            url = f"https://www.youtube.com/watch?v={video_id}"
-                            
-                            results.append({
-                                'title': title,
-                                'url': url,
-                                'thumbnail': thumbnail,
-                                'type': 'video',
-                                'platform': 'youtube'
-                            })
-                            
-                            if len(results) >= limit:
-                                break
-                                
-        return results
-    except Exception as e:
-        logger.error(f"Error searching YouTube videos: {str(e)}")
-        return []
+            logger.error(f"Error handling search request: {str(e)}")
+            emit('search_error', {'message': f'Error processing search request: {str(e)}'})
 
 async def perform_search(query, search_type):
     results = []

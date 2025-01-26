@@ -1,20 +1,17 @@
 // Get the server URL dynamically
-const serverUrl = process.env.NODE_ENV === 'production'
-    ? 'https://browser-client-server.vercel.app'
-    : 'http://127.0.0.1:5001';  // Use localhost for development
+const serverUrl = 'http://localhost:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling', 'websocket'],  // Try polling first, then upgrade to websocket
+    transports: ['polling', 'websocket'],
     upgrade: true,
-    withCredentials: true,
-    forceNew: true,
-    path: '/socket.io'
+    withCredentials: false,  // Changed to false for local development
+    forceNew: true
 });
 
 // DOM Elements
@@ -23,7 +20,6 @@ const searchInput = document.getElementById('search-input');
 const searchButton = document.getElementById('search-button');
 const searchVideos = document.getElementById('search-videos');
 const searchWebsites = document.getElementById('search-websites');
-const searchYTVideos = document.getElementById('search-yt-videos');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
@@ -430,7 +426,7 @@ function addSearchResult(result) {
 
 // Event Listeners
 if (searchForm) {
-    searchForm.addEventListener('submit', async (e) => {
+    searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const query = searchInput.value.trim();
         
@@ -438,42 +434,23 @@ if (searchForm) {
             updateStatus('Please enter a search query', 'error');
             return;
         }
-
-        // Clear previous results
-        clearResults();
-        showLoadingIndicator();
-
-        try {
-            // Determine search type based on checkboxes
-            let searchType = '';
-            if (searchYTVideos.checked) {
-                searchType = 'youtube_only';
-            } else {
-                if (searchVideos.checked && searchWebsites.checked) {
-                    searchType = 'both';
-                } else if (searchVideos.checked) {
-                    searchType = 'videos';
-                } else if (searchWebsites.checked) {
-                    searchType = 'websites';
-                } else {
-                    updateStatus('Please select at least one search option', 'error');
-                    hideLoadingIndicator();
-                    return;
-                }
-            }
-
-            // Emit search event
-            socket.emit('perform_search', {
-                query: query,
-                search_type: searchType
-            });
-
-            updateStatus('Searching...', 'info');
-        } catch (error) {
-            console.error('Error:', error);
-            updateStatus('An error occurred while searching', 'error');
-            hideLoadingIndicator();
+        
+        if (!socket.connected) {
+            updateStatus('Not connected to server. Please wait...', 'error');
+            return;
         }
+        
+        const searchTypes = {
+            videos: searchVideos.checked,
+            websites: searchWebsites.checked
+        };
+        
+        if (!searchTypes.videos && !searchTypes.websites) {
+            updateStatus('Please select at least one search type (Videos or Websites)', 'error');
+            return;
+        }
+        
+        socket.emit('search_query', { query, searchTypes });
     });
 }
 

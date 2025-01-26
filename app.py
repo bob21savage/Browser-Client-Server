@@ -29,38 +29,20 @@ else:
 static_folder = os.path.join(base_dir, 'public')
 logger.info(f"Static folder path: {static_folder}")
 
-# Initialize Flask app
 app = Flask(__name__, 
-           static_folder='public',
+           static_folder=static_folder,
            static_url_path='')
 
-# Configure CORS properly
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://127.0.0.1:5001",
-            "https://browser-client-server.vercel.app"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"],
-        "supports_credentials": True
-    }
-})
+# Configure CORS
+CORS(app)
 
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        "http://127.0.0.1:5001",
-        "https://browser-client-server.vercel.app"
-    ],
-    async_mode=None,  # Let it choose the best mode
+    cors_allowed_origins="*",
+    async_mode='threading',
     logger=True,
-    engineio_logger=True,
-    ping_timeout=60,
-    ping_interval=25,
-    always_connect=True,
-    manage_session=False
+    engineio_logger=True
 )
 
 @app.route('/')
@@ -97,19 +79,11 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    try:
-        # Check if running on Vercel
-        if os.environ.get('VERCEL'):
-            app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
-        else:
-            logger.info("Starting Flask-SocketIO server...")
-            socketio.run(
-                app,
-                host='127.0.0.1',
-                port=5001,
-                debug=True,
-                allow_unsafe_werkzeug=True,
-                use_reloader=False  # Disable reloader to avoid duplicate connections
-            )
-    except Exception as e:
-        logger.error(f"Failed to start server: {str(e)}")
+    logger.info("Starting Flask-SocketIO server...")
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5001,
+        debug=True,
+        allow_unsafe_werkzeug=True  # Add this for development
+    )

@@ -1633,78 +1633,73 @@ class VideoSearchCrawler:
         return results[:100]
 
 def setup_routes(app, socketio):
-    crawler = VideoSearchCrawler("")
+    """Set up Flask routes and Socket.IO event handlers"""
     
-    @socketio.on('perform_search')
-    async def handle_search(data):
-        query = data.get('query', '')
-        search_type = data.get('search_type', '')
-        
+    @socketio.on('connect')
+    def handle_connect():
+        logger.info('Client connected')
+        emit('connect', {'message': 'Connected to server'})
+    
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        logger.info('Client disconnected')
+    
+    @socketio.on('search_query')
+    def handle_search(data):
+        """Handle search request from client"""
         try:
-            if search_type == 'youtube_only':
-                # Search for 75 YouTube videos
-                async with aiohttp.ClientSession() as session:
-                    results = await crawler.search_youtube_videos(session, query, limit=75)
-                    socketio.emit('search_results', {'results': results})
-            else:
-                # Regular search based on type
-                results = []
-                async with aiohttp.ClientSession() as session:
-                    if search_type in ['videos', 'both']:
-                        video_results = await crawler.search_videos(session, query)
-                        results.extend(video_results)
-                    if search_type in ['websites', 'both']:
-                        website_results = await crawler.search_websites(session, query)
-                        results.extend(website_results)
+            query = data.get('query', '').strip()
+            search_types = data.get('searchTypes', {'videos': True, 'websites': True})
+            
+            if not query:
+                emit('search_error', {'message': 'Please enter a search query'})
+                return
+                
+            if not any(search_types.values()):
+                emit('search_error', {'message': 'Please select at least one search type'})
+                return
+            
+            # Notify client that search has started
+            emit('search_started', {'message': f'Starting search for: {query}'})
+            
+            # Create crawler and run search
+            try:
+                crawler = VideoSearchCrawler(query)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                all_results = loop.run_until_complete(crawler.collect_results(search_types))
+                loop.close()
+                
+                # Process and emit results
+                processed_results = []
+                for result in all_results:
+                    processed_result = {
+                        'url': result.get('url', ''),
+                        'title': result.get('title', 'Untitled Result'),
+                        'platform': result.get('platform', 'Unknown'),
+                        'description': result.get('description', ''),
+                        'thumbnail': result.get('thumbnail', '') or result.get('favicon', ''),
+                        'source': result.get('source', 'Unknown'),
+                        'duration': result.get('duration', 'Unknown'),
+                        'type': result.get('type', 'Unknown')
+                    }
+                    processed_results.append(processed_result)
+                    # Emit each result as it's processed
+                    emit('new_result', {'result': processed_result, 'query': query})
                     
-                    socketio.emit('search_results', {'results': results})
-                    
+                # Notify client that search is complete
+                emit('search_completed', {
+                    'message': f'Search completed. Found {len(processed_results)} results.',
+                    'total': len(processed_results)
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in search: {str(e)}")
+                emit('search_error', {'message': f'Error during search: {str(e)}'})
+                
         except Exception as e:
-            logger.error(f"Search error: {str(e)}")
-            socketio.emit('search_error', {'message': str(e)})
-
-async def search_youtube_videos(self, session, query, limit=75):
-    try:
-        results = []
-        search_url = f"https://www.youtube.com/results?search_query={quote(query)}&sp=CAASAhAB"
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9',
-        }
-        
-        async with session.get(search_url, headers=headers) as response:
-            if response.status == 200:
-                html_content = await response.text()
-                
-                # Extract video IDs using regex
-                video_id_pattern = r'"videoId":"([^"]+)"'
-                title_pattern = r'"title":{"runs":\[{"text":"([^"]+)"\}\]'
-                
-                video_ids = re.findall(video_id_pattern, html_content)
-                titles = re.findall(title_pattern, html_content)
-                
-                # Combine video IDs with titles
-                for i, (video_id, title) in enumerate(zip(video_ids, titles)):
-                    if i >= limit:
-                        break
-                        
-                    thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
-                    url = f"https://www.youtube.com/watch?v={video_id}"
-                    
-                    results.append({
-                        'title': title,
-                        'url': url,
-                        'thumbnail': thumbnail,
-                        'type': 'video',
-                        'platform': 'youtube',
-                        'source': 'YouTube'
-                    })
-                    
-        return results[:limit]
-    except Exception as e:
-        logger.error(f"Error searching YouTube videos: {str(e)}")
-        return []
+            logger.error(f"Error handling search request: {str(e)}")
+            emit('search_error', {'message': f'Error processing search request: {str(e)}'})
 
 async def perform_search(query, search_type):
     results = []
@@ -1731,40 +1726,21 @@ async def search_videos(session, query):
             html = await response.text()
             
         soup = BeautifulSoup(html, 'html.parser')
-        video_elements = soup.find_all('div', {'class': 'g'})
+        video_elements = soup.find_all('div', {'class': 'yt-lockup-content'})
         
         for element in video_elements[:5]:  # Limit to first 5 results
-            title_elem = element.find('h3')
-            link = element.find('a')
-            if not title_elem or not link:
-                continue
-
-            title = title_elem.text.strip()
-            url = link.get('href', '')
-
-            # Skip if no valid URL
-            if not url.startswith('http'):
-                continue
-
-            # Get description
-            description = ''
-            desc_elem = element.find('div', class_='s')
-            if desc_elem:
-                description = desc_elem.text.strip()
-
-            # Get favicon
-            favicon = f"https://www.google.com/s2/favicons?domain={quote(url)}"
-
-            results.append({
-                'type': 'video',
-                'title': title,
-                'url': url,
-                'description': description,
-                'favicon': favicon,
-                'platform': 'Google',
-                'source': self._get_source_from_url(url)
-            })
-
+            title_elem = element.find('a', {'class': 'yt-uix-tile-link'})
+            if title_elem:
+                video_id = title_elem['href'].split('=')[-1]
+                title = title_elem.text
+                
+                results.append({
+                    'type': 'video',
+                    'title': title,
+                    'url': f'https://www.youtube.com/watch?v={video_id}',
+                    'embed_url': f'https://www.youtube.com/embed/{video_id}',
+                    'thumbnail': f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg'
+                })
     except Exception as e:
         logger.error(f"Error searching videos: {str(e)}")
     

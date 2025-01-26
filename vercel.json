@@ -13,18 +13,7 @@
     "routes": [
         {
             "src": "/socket.io/(.*)",
-            "dest": "app.py",
-            "methods": ["GET", "POST", "OPTIONS"],
-            "headers": {
-                "Access-Control-Allow-Origin": "https://browser-client-server.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/public/(.*)",
-            "dest": "/public/$1"
+            "dest": "app.py"
         },
         {
             "src": "/(.*)",

@@ -269,6 +269,7 @@
     <div class="container">
         <header>
             <h1>Video & Web Search</h1>
+            <p class="subtitle">Search for videos and websites across multiple platforms</p>
         </header>
 
         <main>
@@ -277,25 +278,24 @@
                     <input type="text" id="search-input" placeholder="Enter your search query..." required>
                     <div class="search-options">
                         <label>
-                            <input type="checkbox" id="search-videos" checked> Videos
+                            <input type="checkbox" id="search-videos" checked>
+                            Videos
                         </label>
                         <label>
-                            <input type="checkbox" id="search-websites" checked> Websites
-                        </label>
-                        <label>
-                            <input type="checkbox" id="search-yt-videos"> YT Videos (75)
+                            <input type="checkbox" id="search-websites" checked>
+                            Websites
                         </label>
                     </div>
                     <button type="submit" id="search-button">Search</button>
                 </form>
-                <div id="status" class="status" style="display: none;"></div>
+                <div id="status" class="status"></div>
                 <div id="stats"></div>
             </div>
             <div id="results"></div>
         </main>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/js/client.js"></script>
 </body>
 </html>

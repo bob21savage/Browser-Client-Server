@@ -29,17 +29,25 @@ else:
 static_folder = os.path.join(base_dir, 'public')
 logger.info(f"Static folder path: {static_folder}")
 
+# Initialize Flask app
 app = Flask(__name__, 
-           static_folder=static_folder,
+           static_folder='public',
            static_url_path='')
 
-# Configure CORS
-CORS(app)
+# Configure CORS properly
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:5001", "http://127.0.0.1:5001"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
 
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"],
     async_mode='threading',
     logger=True,
     engineio_logger=True
@@ -79,11 +87,14 @@ def serve_static(path):
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    logger.info("Starting Flask-SocketIO server...")
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=5001,
-        debug=True,
-        allow_unsafe_werkzeug=True  # Add this for development
-    )
+    try:
+        logger.info("Starting Flask-SocketIO server...")
+        socketio.run(
+            app,
+            host='127.0.0.1',  
+            port=5001,
+            debug=True,
+            allow_unsafe_werkzeug=True
+        )
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}")

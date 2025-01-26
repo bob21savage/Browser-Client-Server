@@ -1,5 +1,5 @@
 // Get the server URL dynamically
-const serverUrl = 'http://localhost:5001';  // Use localhost for development
+const serverUrl = 'http://127.0.0.1:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {
@@ -8,10 +8,9 @@ const socket = io(serverUrl, {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    transports: ['polling', 'websocket'],
+    transports: ['websocket', 'polling'],
     upgrade: true,
-    withCredentials: false,  // Changed to false for local development
-    forceNew: true
+    withCredentials: true
 });
 
 // DOM Elements

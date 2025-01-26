@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
-const flaskUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL without port
+const flaskUrl = 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app'; // Updated to the Vercel deployment URL without port
 
 // Enable CORS
 app.use(cors({
@@ -59,9 +59,8 @@ socket.on('connect', () => {
 
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
-    console.log('Retrying connection...');
     retryCount++;
-    setTimeout(() => connectWithRetry(), 2000); // Use function reference
+    setTimeout(connectWithRetry, 2000); // Use function reference instead of string
 });
 
 socket.on('disconnect', () => {
@@ -70,7 +69,7 @@ socket.on('disconnect', () => {
 
 // Proxy configuration
 const proxyOptions = {
-    target: flaskUrl,  // Updated target URL
+    target: flaskUrl,  // Updated target to use Vercel URL
     changeOrigin: true,
     ws: true,  // Enable WebSocket proxy
     secure: true,

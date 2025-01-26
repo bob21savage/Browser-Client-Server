@@ -6,7 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const expressApp = express();
-const PORT = 5001; // Updated Express server port
+const PORT = process.env.PORT || 3000; // Updated Express server port
 
 // Path to the Python script
 const pythonScriptPath = 'C:\\Users\\bpier\\Desktop\\scrape\\scrape\\my app\\scrape\\scrape_upgrade.py';
@@ -65,17 +65,12 @@ app.whenReady().then(() => {
         res.sendFile(__dirname + '/templates/index.html');
     });
 
+    // Update the CORS configuration to allow requests only from the Vercel deployment URL
     expressApp.use(cors({
-        origin: 'https://browser-client-server.vercel.app', // Allow only your Vercel URL
+        origin: 'https://browser-client-server-k6a7hw1m6-bob21savages-projects.vercel.app', // Allow only your Vercel URL
         methods: ['GET', 'POST', 'OPTIONS'],
         credentials: true
     }));
-
-    expressApp.use((req, res, next) => {
-        res.setHeader('Cache-Control', 'no-store');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-        next();
-    });
 
     // Update the Express server to listen on the same port as the HTTP server
     httpServer.listen(PORT, () => {

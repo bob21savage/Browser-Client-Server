@@ -78,27 +78,18 @@ pip install advanced-scraper
 
 1. Start the server:
 ```bash
-python app.py
+python ./app.py
 ```
-
-2. Open your web browser and go to:
-```
-http://localhost:5000
-```
-3. Run the package:
+2. Run the package:
 ```bash
-node start.js
+node start server.cjs
 ```
-4. run this to test the package:
+3. run this to test the package:
 ```bash
 npm run dev:all
 ```
-5. then check the status of the package:
+4. then check the status of the package:
 ```
-http://localhost:3000/health
-```
-5. Enter your search query and click "Search" or press Enter
-
 ## Video Embedding
 
 This project supports video embedding using the following libraries:
@@ -117,18 +108,6 @@ pip install -r requirements.txt
 ```bash
 & "c:/Users/bpier/Downloads/scrape/scrape/scrape/my app/scrape/node_modules/.bin/electron" "c:/Users/bpier/Downloads/scrape/scrape/scrape/my app/scrape/server.cjs"
 ```
-
-2. Open your web browser and go to:
-```
-http://localhost:3000
-```
-
-Here is a simple example of how to use these libraries to embed and play a video:
-
-```python
-# Example code removed since libraries are no longer used.
-```
-
 ## Building and Serving the React Application
 
 To build and serve the React application, follow these steps:

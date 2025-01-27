@@ -1,4 +1,4 @@
-flask>=3.0.0
+flask[async]>=3.0.0
 flask-socketio>=5.3.6
 flask-cors>=4.0.0
 aiohttp>=3.9.1

@@ -10,31 +10,27 @@ const resultsContainer = document.getElementById('results'); // Assuming you hav
 
 // Basic functionality to log input and make a fetch request
 if (searchForm) {
-    searchForm.addEventListener('submit', (e) => {
+    searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const query = searchInput.value;
         console.log('Search query:', query);
 
         // Fetch request to send the search query to the server
-        fetch(`${serverUrl}/api/search`, {
+        const response = await fetch('/api/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ query: query }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Response:', data);
-            if (data.result === 'success') {
-                displayResults(data.results); // Call a function to display results
-            } else {
-                console.error('Search failed:', data);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+            body: JSON.stringify({ query }),
         });
+
+        const data = await response.json();
+        console.log('Response:', data);
+        if (data.result === 'success') {
+            displayResults(data.results); // Call a function to display results
+        } else {
+            console.error('Search failed:', data);
+        }
     });
 }
 

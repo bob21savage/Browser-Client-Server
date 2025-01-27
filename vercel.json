@@ -1,26 +1,12 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "app.py",
-            "use": "@vercel/python"
-        },
-        {
-            "src": "public/**",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/socket.io/(.*)",
-            "dest": "app.py"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "app.py"
-        }
-    ],
-    "env": {
-        "PYTHONUNBUFFERED": "1"
+  "functions": {
+    "api/*": {
+      "memory": 1024,
+      "maxDuration": 10
     }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
 }

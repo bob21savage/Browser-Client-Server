@@ -1,7 +1,6 @@
 // Get the server URL dynamically
-const serverUrl = process.env.NODE_ENV === 'production'
-    ? 'https://browser-client-server.vercel.app'
-    : 'http://127.0.0.1:5001';  // Use localhost for development
+const isProduction = false; // Set this to true in production environments
+const serverUrl = isProduction ? 'https://browser-client-server.vercel.app' : 'http://127.0.0.1:5001';  // Use localhost for development
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {

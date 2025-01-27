@@ -91,11 +91,14 @@ def search():
     query = data.get('query')
     logger.info(f"Received data: {data}")  # Log the received data for debugging
 
-    # Create a VideoSearchCrawler instance and perform the search
-    crawler = VideoSearchCrawler(query)
-    results = asyncio.run(crawler.collect_results({'videos': True, 'websites': True}))  # Adjust search types as needed
-
-    return jsonify({'result': 'success', 'query': query, 'results': results})
+    try:
+        # Create a VideoSearchCrawler instance and perform the search
+        crawler = VideoSearchCrawler(query)
+        results = asyncio.run(crawler.collect_results({'videos': True, 'websites': True}))  # Adjust search types as needed
+        return jsonify({'result': 'success', 'query': query, 'results': results})
+    except Exception as e:
+        logger.error(f"Error during search: {str(e)}")
+        return jsonify({'result': 'error', 'message': str(e)}), 500
 
 # Set up all routes and socket handlers
 from scrape.scrape_upgrade import setup_routes

@@ -2,6 +2,10 @@ import os
 import sys
 import logging
 from pathlib import Path
+from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask_cors import CORS
+from flask_socketio import SocketIO
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -12,11 +16,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 scrape_dir = os.path.join(current_dir, 'scrape')
 if scrape_dir not in sys.path:
     sys.path.append(scrape_dir)
-
-from flask import Flask, send_from_directory, send_file
-from flask_cors import CORS
-from flask_socketio import SocketIO
-from scrape_upgrade import setup_routes
 
 # When frozen by PyInstaller, the path to the resources is different
 if getattr(sys, 'frozen', False):
@@ -75,7 +74,31 @@ def serve_static(path):
         logger.error(f"Error serving static file {path}: {str(e)}")
         return f"Error: {str(e)}", 500
 
+@app.route('/favicon.ico')
+def favicon():
+    try:
+        logger.info("Serving favicon.ico")
+        return send_from_directory(static_folder, 'favicon.ico')
+    except Exception as e:
+        logger.error(f"Error serving favicon.ico: {str(e)}")
+        return f"Error: {str(e)}", 500
+
+from scrape.scrape_upgrade import VideoSearchCrawler
+
+@app.route('/api/search', methods=['POST'])
+def search():
+    data = request.json
+    query = data.get('query')
+    logger.info(f"Received data: {data}")  # Log the received data for debugging
+
+    # Create a VideoSearchCrawler instance and perform the search
+    crawler = VideoSearchCrawler(query)
+    results = asyncio.run(crawler.collect_results({'videos': True, 'websites': True}))  # Adjust search types as needed
+
+    return jsonify({'result': 'success', 'query': query, 'results': results})
+
 # Set up all routes and socket handlers
+from scrape.scrape_upgrade import setup_routes
 setup_routes(app, socketio)
 
 if __name__ == '__main__':

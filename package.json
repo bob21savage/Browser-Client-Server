@@ -2,9 +2,9 @@
   "name": "video-link-scraper",
   "version": "1.0.0",
   "description": "A real-time video link scraper with WebSocket support",
-  "main": "start.js",
+  "main": "server.cjs",
   "type": "module",
-  "bin": "start.js",
+  "bin": "server.cjs",
   "pkg": {
     "assets": [
       "public/**/*",
@@ -20,11 +20,10 @@
     ]
   },
   "scripts": {
-    "start": "node start.js",
-    "dev": "nodemon start.js",
+    "start": "node server.cjs",
+    "dev": "nodemon server.cjs",
     "dev:all": "concurrently \"python -m scrape.scrape_upgrade\" \"npm run dev\"",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx pkg ."
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "cors": "^2.8.5",

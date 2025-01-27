@@ -9,6 +9,10 @@ const { Server } = require('socket.io');
 const expressApp = express();
 const PORT = process.env.PORT || 3000; // Updated Express server port
 
+// Ensure this file runs in a Node.js environment
+// Set the cache path to the app folder
+app.setPath('userData', __dirname);
+
 // Path to the Python script
 const pythonScriptPath = './scrape/scrape_upgrade.py'; // Relative path to the Python script in the scrape folder
 
@@ -41,7 +45,6 @@ function createWindow() {
 }
 
 // This will be called when Electron is ready
-app.setPath('userData', __dirname); // Set the cache path to the app folder
 app.whenReady().then(() => {
     createWindow();
 
@@ -94,12 +97,6 @@ app.whenReady().then(() => {
         console.log(`Express server with WebSocket is running on http://localhost:${PORT}`);
     }).on('error', (err) => {
         console.error('HTTP Server Error:', err);
-    });
-
-    app.on('window-all-closed', () => {
-        if (process.platform !== 'darwin') {
-            app.quit();
-        }
     });
 
     app.on('activate', () => {

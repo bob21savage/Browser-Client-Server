@@ -11,8 +11,11 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
-from flask import send_from_directory
-from flask_socketio import emit
+from flask import Flask
+from flask_socketio import SocketIO, emit
+
+app = Flask(__name__)
+socketio = SocketIO(app)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1524,50 +1527,49 @@ class VideoSearchCrawler:
         async with session.get(google_video_url, headers=self.headers) as response:
             if response.status == 200:
                 html = await response.text()
-                soup = BeautifulSoup(html, 'html.parser')
-                # Find video elements
-                video_elements = soup.find_all('div', class_='g')
-                logger.info(f"Found {len(video_elements)} video elements")
-                results = []
-                for element in video_elements:
-                    try:
-                        # Get title and URL
-                        title_elem = element.find('h3')
-                        link = element.find('a')
-                        if not title_elem or not link:
-                            continue
+                
+        soup = BeautifulSoup(html, 'html.parser')
+        video_elements = soup.find_all('div', class_='g')
+        logger.info(f"Found {len(video_elements)} video elements")
+        results = []
+        for element in video_elements:
+            try:
+                # Get title and URL
+                title_elem = element.find('h3')
+                link = element.find('a')
+                if not title_elem or not link:
+                    continue
 
-                        title = title_elem.text.strip()
-                        url = link.get('href', '')
+                title = title_elem.text.strip()
+                url = link.get('href', '')
 
-                        # Skip if no valid URL
-                        if not url.startswith('http'):
-                            continue
+                # Skip if no valid URL
+                if not url.startswith('http'):
+                    continue
 
-                        # Get description
-                        description = ''
-                        desc_elem = element.find('div', class_='s')
-                        if desc_elem:
-                            description = desc_elem.text.strip()
+                # Get description
+                description = ''
+                desc_elem = element.find('div', class_='s')
+                if desc_elem:
+                    description = desc_elem.text.strip()
 
-                        # Get favicon
-                        favicon = f"https://www.google.com/s2/favicons?domain={quote(url)}"
+                # Get favicon
+                favicon = f"https://www.google.com/s2/favicons?domain={quote(url)}"
 
-                        results.append({
-                            'type': 'video',
-                            'title': title,
-                            'url': url,
-                            'description': description,
-                            'favicon': favicon,
-                            'platform': 'Google',
-                            'source': self._get_source_from_url(url)
-                        })
+                results.append({
+                    'type': 'video',
+                    'title': title,
+                    'url': url,
+                    'description': description,
+                    'favicon': favicon,
+                    'platform': 'Google',
+                    'source': self._get_source_from_url(url)
+                })
 
-                    except Exception as e:
-                        logger.error(f"Error processing Google video result: {str(e)}")
-                        continue
-                return results
-        return []
+            except Exception as e:
+                logger.error(f"Error processing Google video result: {str(e)}")
+                continue
+        return results
 
     async def _search_google_videos(self, query: str) -> List[Dict]:
         """Search for videos using Google Video Search."""

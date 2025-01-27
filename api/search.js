@@ -14,12 +14,12 @@ export default function handler(req, res) {
                 console.error(`stderr: ${stderr}`);
                 return res.status(500).json({ error: 'Script Error', message: stderr });
             }
+            console.log(`Raw output from Python script: ${stdout}`); // Log the raw output for debugging
             try {
                 const output = JSON.parse(stdout); // Try to parse the output as JSON
                 res.status(200).json(output);
             } catch (parseError) {
                 console.error(`Output parsing error: ${parseError.message}`);
-                console.error(`Raw output: ${stdout}`); // Log the raw output for debugging
                 res.status(500).json({ error: 'Output Parsing Error', message: stdout }); // Return the raw output if parsing fails
             }
         });

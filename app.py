@@ -46,15 +46,17 @@ socketio = SocketIO(
 
 from scrape.scrape_upgrade import VideoSearchCrawler
 
-def search(query):
+@app.route('/search', methods=['POST'])
+def search():
     try:
+        query = request.json['query']
         # Create a VideoSearchCrawler instance and perform the search
         crawler = VideoSearchCrawler(query)
         results = crawler.collect_results({'videos': True, 'websites': True})  # Adjust search types as needed
-        return results  # Return results directly
+        return jsonify(results)  # Return results directly
     except Exception as e:
-        print(f"Error during search: {str(e)}")  # Log the error
-        return {'result': 'error', 'message': str(e)}
+        logger.error(f"Error during search: {str(e)}")  # Log the error
+        return jsonify({'result': 'error', 'message': str(e)})
 
 @app.route('/')
 def index():

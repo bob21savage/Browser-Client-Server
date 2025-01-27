@@ -7,7 +7,7 @@ export default function handler(req, res) {
         const { query } = req.body;
 
         // Run your Python script with the query
-        exec(`python ./app.py ${query}`, (error, stdout, stderr) => {
+        exec(`python3 ./app.py ${query}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing script: ${error.message}`);
                 return res.status(500).json({ error: 'Internal Server Error', message: error.message });

@@ -10,10 +10,11 @@ import http from 'http';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Ensure this file runs in a Node.js environment
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 3000;
-const flaskUrl = 'https://browser-client-server.vercel.app/api'; // Updated to the Vercel deployment URL with port
+const port = process.env.PORT || 3000; // Use environment variable for port
+const flaskUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL without port
 
 // Enable CORS
 app.use(cors({
@@ -27,7 +28,7 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(express.static(join(__dirname, 'src')));
 
 // Socket.IO connection to Flask server
-const socket = io('https://browser-client-server.vercel.app', {
+const socket = io(flaskUrl, {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
@@ -131,7 +132,7 @@ async function startServer() {
     
     if (!isPortAvailable) {
         console.error('Could not find an available port. Please free up some ports and try again.');
-        process.exit(1);
+        process.exit(1); // Use process.exit to exit the Node.js process
     }
     
     server.listen(currentPort, () => {
@@ -152,7 +153,7 @@ function cleanup() {
     socket.close();
     server.close(() => {
         console.log('Server closed');
-        process.exit(0);
+        process.exit(0); // Use process.exit to exit the Node.js process
     });
 }
 
@@ -162,5 +163,5 @@ process.on('SIGTERM', cleanup);
 // Start the server
 startServer().catch(err => {
     console.error('Failed to start server:', err);
-    process.exit(1);
+    process.exit(1); // Use process.exit to exit the Node.js process
 });

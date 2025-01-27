@@ -10,6 +10,11 @@ const resultsContainer = document.getElementById('results'); // Assuming you hav
 
 // Basic functionality to log input and make a fetch request
 if (searchForm) {
+    const button = document.createElement('button');
+    button.type = 'submit'; // Set button type
+    button.textContent = 'Search'; // Set discernible text
+    searchForm.appendChild(button);
+
     searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const query = searchInput.value;

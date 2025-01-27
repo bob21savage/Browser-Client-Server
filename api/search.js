@@ -1,67 +1,31 @@
-// Define the VideoSearchCrawler class
-class VideoSearchCrawler {
-    constructor(query) {
-        this.query = query;
-        this.results = [];
-    }
-
-    async collectResults(options) {
-        if (options.videos) {
-            await this.searchVideos(this.query);
-        }
-        if (options.websites) {
-            await this.searchWebsites(this.query);
-        }
-        return this.results;
-    }
-
-    async searchVideos(query) {
-        // Implement the logic to search for videos
-        // For example, using an API or web scraping
-        const videoResults = await this.fetchVideoResults(query);
-        this.results.push(...videoResults);
-    }
-
-    async searchWebsites(query) {
-        // Implement the logic to search for websites
-        const websiteResults = await this.fetchWebsiteResults(query);
-        this.results.push(...websiteResults);
-    }
-
-    async fetchVideoResults(query) {
-        // Mock implementation - replace with actual API call or scraping logic
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([{ title: 'Example Video', url: 'http://example.com/video' }]);
-            }, 1000);
-        });
-    }
-
-    async fetchWebsiteResults(query) {
-        // Mock implementation - replace with actual API call or scraping logic
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([{ title: 'Example Website', url: 'http://example.com' }]);
-            }, 1000);
-        });
-    }
-}
+// Import necessary modules
+import { exec } from 'child_process';
 
 // Define the API handler
 export default function handler(req, res) {
     if (req.method === 'POST') {
         const { query } = req.body;
 
-        // Create a VideoSearchCrawler instance and perform the search
-        const crawler = new VideoSearchCrawler(query);
-        crawler.collectResults({ videos: true, websites: true })
-            .then(results => {
-                res.status(200).json({ result: 'success', query, results });
-            })
-            .catch(error => {
-                console.error(`Error during search: ${error.message}`);
-                res.status(500).json({ result: 'error', message: error.message });
-            });
+        // Run your Python script with the query
+        exec(`python ./app.py ${query}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing script: ${error.message}`);
+                return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                return res.status(500).json({ error: 'Script Error', message: stderr });
+            }
+            console.log(`Raw output from Python script: ${stdout}`); // Log the raw output for debugging
+            try {
+                const output = JSON.parse(stdout); // Try to parse the output as JSON
+                res.status(200).json(output);
+            } catch (parseError) {
+                console.error(`Output parsing error: ${parseError.message}`);
+                console.error(`Raw output: ${stdout}`); // Log the raw output for debugging
+                res.status(500).json({ error: 'Output Parsing Error', message: parseError.message, rawOutput: stdout }); // Return the raw output if parsing fails
+            }
+        });
     } else {
         res.setHeader('Allow', ['POST']);
         res.status(405).end(`Method ${req.method} Not Allowed`);

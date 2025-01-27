@@ -31,9 +31,7 @@ logger.info(f"Static folder path: {static_folder}")
 app = Flask(__name__, 
            static_folder=static_folder,
            static_url_path='')
-
-# Configure CORS
-CORS(app)
+CORS(app)  # Enable CORS for all routes
 
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(app)

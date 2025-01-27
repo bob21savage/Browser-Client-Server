@@ -24,7 +24,7 @@ if (searchForm) {
 
 async function search(query) {
     console.log('Search query:', query);
-    fetch('http://127.0.0.1:5001/search', {
+    fetch('https://browser-client-server.onrender.com/search', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

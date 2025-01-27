@@ -44,6 +44,18 @@ socketio = SocketIO(
     engineio_logger=True
 )
 
+from scrape.scrape_upgrade import VideoSearchCrawler
+
+def search(query):
+    try:
+        # Create a VideoSearchCrawler instance and perform the search
+        crawler = VideoSearchCrawler(query)
+        results = crawler.collect_results({'videos': True, 'websites': True})  # Adjust search types as needed
+        return results  # Return results directly
+    except Exception as e:
+        print(f"Error during search: {str(e)}")  # Log the error
+        return {'result': 'error', 'message': str(e)}
+
 @app.route('/')
 def index():
     try:
@@ -82,23 +94,6 @@ def favicon():
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
         return f"Error: {str(e)}", 500
-
-from scrape.scrape_upgrade import VideoSearchCrawler
-
-@app.route('/api/search', methods=['POST'])
-def search():
-    data = request.json
-    query = data.get('query')
-    logger.info(f"Received data: {data}")  # Log the received data for debugging
-
-    try:
-        # Create a VideoSearchCrawler instance and perform the search
-        crawler = VideoSearchCrawler(query)
-        results = asyncio.run(crawler.collect_results({'videos': True, 'websites': True}))  # Adjust search types as needed
-        return jsonify({'result': 'success', 'query': query, 'results': results})
-    except Exception as e:
-        logger.error(f"Error during search: {str(e)}")
-        return jsonify({'result': 'error', 'message': str(e)}), 500
 
 # Set up all routes and socket handlers
 from scrape.scrape_upgrade import setup_routes

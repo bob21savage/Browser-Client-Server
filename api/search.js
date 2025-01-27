@@ -14,7 +14,13 @@ export default function handler(req, res) {
                 console.error(`stderr: ${stderr}`);
                 return res.status(500).json({ error: 'Script Error', message: stderr });
             }
-            res.status(200).json({ output: stdout });
+            try {
+                const output = JSON.parse(stdout); // Try to parse the output as JSON
+                res.status(200).json(output);
+            } catch (parseError) {
+                console.error(`Output parsing error: ${parseError.message}`);
+                res.status(500).json({ error: 'Output Parsing Error', message: stdout }); // Return the raw output if parsing fails
+            }
         });
     } else {
         res.setHeader('Allow', ['POST']);

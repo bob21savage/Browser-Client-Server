@@ -5,10 +5,14 @@ export default function handler(req, res) {
         const { query } = req.body;
 
         // Run your Python script with the query
-        exec(`python ./scrape/scrape_upgrade.py ${query}`, (error, stdout, stderr) => {
+        exec(`python ./app.py ${query}`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing script: ${error}`);
-                return res.status(500).json({ error: 'Internal Server Error' });
+                console.error(`Error executing script: ${error.message}`);
+                return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                return res.status(500).json({ error: 'Script Error', message: stderr });
             }
             res.status(200).json({ output: stdout });
         });

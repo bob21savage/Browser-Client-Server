@@ -48,8 +48,10 @@ from scrape.scrape_upgrade import VideoSearchCrawler
 
 @app.route('/search', methods=['POST'])
 def search():
+    data = request.json
+    query = data.get('query')
+
     try:
-        query = request.json['query']
         # Create a VideoSearchCrawler instance and perform the search
         crawler = VideoSearchCrawler(query)
         results = crawler.collect_results({'videos': True, 'websites': True})  # Adjust search types as needed

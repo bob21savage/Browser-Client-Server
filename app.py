@@ -36,13 +36,7 @@ app = Flask(__name__,
 CORS(app)
 
 # Initialize SocketIO with proper configuration
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='threading',
-    logger=True,
-    engineio_logger=True
-)
+socketio = SocketIO(app)
 
 from scrape.scrape_upgrade import VideoSearchCrawler
 
@@ -51,14 +45,16 @@ def search():
     data = request.json
     query = data.get('query')
 
+    if not query:
+        return jsonify({'error': 'Query parameter is required.'}), 400
+
     try:
-        # Create a VideoSearchCrawler instance and perform the search
         crawler = VideoSearchCrawler(query)
-        results = crawler.collect_results({'videos': True, 'websites': True})  # Adjust search types as needed
-        return jsonify(results)  # Return results directly
+        results = crawler.collect_results({'videos': True, 'websites': True})
+        return jsonify(results)
     except Exception as e:
-        logger.error(f"Error during search: {str(e)}")  # Log the error
-        return jsonify({'result': 'error', 'message': str(e)})
+        print(f"Error during search: {str(e)}")  # Log the error
+        return jsonify({'error': 'An error occurred during the search.'}), 500
 
 @app.route('/')
 def index():
@@ -105,10 +101,4 @@ setup_routes(app, socketio)
 
 if __name__ == '__main__':
     logger.info("Starting Flask-SocketIO server...")
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=5001,
-        debug=True,
-        allow_unsafe_werkzeug=True  # Add this for development
-    )
+    app.run(debug=True)  # No host or port specified for Vercel deployment

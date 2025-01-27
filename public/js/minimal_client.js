@@ -18,35 +18,33 @@ if (searchForm) {
     searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const query = searchInput.value;
-        console.log('Search query:', query);
-
         await search(query);
     });
 }
 
 async function search(query) {
-    const response = await fetch('/api/search', {
+    console.log('Search query:', query);
+    fetch('http://127.0.0.1:5001/search', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: query })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        // Handle the response data
+    })
+    .catch(error => {
+        console.error('API Error:', error);
+        alert('Error: ' + error.message);
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        alert('Error: ' + errorData.message);
-        return;
-    }
-
-    const data = await response.json();
-    console.log('Response:', data);
-    if (data.result === 'success') {
-        displayResults(data.results); // Call a function to display results
-    } else {
-        console.error('Search failed:', data);
-    }
 }
 
 function displayResults(results) {

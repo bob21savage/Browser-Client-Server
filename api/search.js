@@ -1,5 +1,7 @@
+// Import necessary modules
 import { exec } from 'child_process';
 
+// Define the API handler
 export default function handler(req, res) {
     if (req.method === 'POST') {
         const { query } = req.body;
@@ -8,13 +10,11 @@ export default function handler(req, res) {
         exec(`python ./app.py ${query}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing script: ${error.message}`);
-                console.error(`Error details: ${error.stack}`);
-                return res.status(500).json({ error: 'Internal Server Error', message: error.message, details: error.stack });
+                return res.status(500).json({ error: 'Internal Server Error', message: error.message });
             }
             if (stderr) {
                 console.error(`stderr: ${stderr}`);
-                console.error(`stderr details: ${stderr.toString()}`);
-                return res.status(500).json({ error: 'Script Error', message: stderr, details: stderr.toString() });
+                return res.status(500).json({ error: 'Script Error', message: stderr });
             }
             console.log(`Raw output from Python script: ${stdout}`); // Log the raw output for debugging
             try {
@@ -22,9 +22,8 @@ export default function handler(req, res) {
                 res.status(200).json(output);
             } catch (parseError) {
                 console.error(`Output parsing error: ${parseError.message}`);
-                console.error(`Output parsing error details: ${parseError.stack}`);
                 console.error(`Raw output: ${stdout}`); // Log the raw output for debugging
-                res.status(500).json({ error: 'Output Parsing Error', message: parseError.message, details: parseError.stack, rawOutput: stdout }); // Return the raw output if parsing fails
+                res.status(500).json({ error: 'Output Parsing Error', message: parseError.message, rawOutput: stdout }); // Return the raw output if parsing fails
             }
         });
     } else {

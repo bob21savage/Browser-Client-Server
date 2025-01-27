@@ -39,7 +39,7 @@ async function search(query) {
     })
     .then(data => {
         console.log('Response:', data);
-        // Handle the response data
+        displayResults(data); // Call displayResults with the received data
     })
     .catch(error => {
         console.error('API Error:', error);

@@ -78,7 +78,7 @@ pip install advanced-scraper
 
 1. Start the server:
 ```bash
-python ./app.py
+gunicorn app:app
 ```
 2. Run the package:
 ```bash

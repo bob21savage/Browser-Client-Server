@@ -125,9 +125,11 @@
         <div id="results"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io('https://browser-client-server.vercel.app');
+        // Temporarily removed Socket.IO script for testing
+        // const socket = io('https://browser-client-server.vercel.app');
+    </script>
+    <script>
         const resultsDiv = document.getElementById('results');
         const statusDiv = document.getElementById('status');
         const loader = document.getElementById('loader');
@@ -157,7 +159,7 @@
             searchInProgress = true;
 
             // Emit search query
-            socket.emit('search_query', { query });
+            // socket.emit('search_query', { query });
         }
 
         function createVideoCard(result) {
@@ -205,47 +207,47 @@
         }
 
         // Socket event handlers
-        socket.on('connect', () => {
-            console.log('Connected to server');
-            showStatus('Connected to server', 'success');
-        });
+        // socket.on('connect', () => {
+        //     console.log('Connected to server');
+        //     showStatus('Connected to server', 'success');
+        // });
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-            showStatus('Disconnected from server', 'error');
-        });
+        // socket.on('disconnect', () => {
+        //     console.log('Disconnected from server');
+        //     showStatus('Disconnected from server', 'error');
+        // });
 
-        socket.on('search_started', (data) => {
-            console.log('Search started:', data);
-            showStatus(`Searching for: ${data.query}`, 'info');
-        });
+        // socket.on('search_started', (data) => {
+        //     console.log('Search started:', data);
+        //     showStatus(`Searching for: ${data.query}`, 'info');
+        // });
 
-        socket.on('progress_update', (data) => {
-            console.log('Progress:', data);
-            showStatus(data.message, 'info');
-        });
+        // socket.on('progress_update', (data) => {
+        //     console.log('Progress:', data);
+        //     showStatus(data.message, 'info');
+        // });
 
-        socket.on('link_found', (result) => {
-            console.log('Link found:', result);
-            if (result.url) {
-                const card = createVideoCard(result);
-                resultsDiv.appendChild(card);
-            }
-        });
+        // socket.on('link_found', (result) => {
+        //     console.log('Link found:', result);
+        //     if (result.url) {
+        //         const card = createVideoCard(result);
+        //         resultsDiv.appendChild(card);
+        //     }
+        // });
 
-        socket.on('search_complete', (data) => {
-            console.log('Search complete:', data);
-            showStatus(`Search completed! Found ${data.total_links} links in ${data.duration} seconds`, 'success');
-            searchInProgress = false;
-            loader.style.display = 'none';
-        });
+        // socket.on('search_complete', (data) => {
+        //     console.log('Search complete:', data);
+        //     showStatus(`Search completed! Found ${data.total_links} links in ${data.duration} seconds`, 'success');
+        //     searchInProgress = false;
+        //     loader.style.display = 'none';
+        // });
 
-        socket.on('error', (data) => {
-            console.error('Error:', data);
-            showStatus(`Error: ${data.message}`, 'error');
-            searchInProgress = false;
-            loader.style.display = 'none';
-        });
+        // socket.on('error', (data) => {
+        //     console.error('Error:', data);
+        //     showStatus(`Error: ${data.message}`, 'error');
+        //     searchInProgress = false;
+        //     loader.style.display = 'none';
+        // });
     </script>
 </body>
 </html>

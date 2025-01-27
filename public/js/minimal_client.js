@@ -20,23 +20,33 @@ if (searchForm) {
         const query = searchInput.value;
         console.log('Search query:', query);
 
-        // Fetch request to send the search query to the server
-        const response = await fetch('/api/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ query }),
-        });
-
-        const data = await response.json();
-        console.log('Response:', data);
-        if (data.result === 'success') {
-            displayResults(data.results); // Call a function to display results
-        } else {
-            console.error('Search failed:', data);
-        }
+        await search(query);
     });
+}
+
+async function search(query) {
+    const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        alert('Error: ' + errorData.message);
+        return;
+    }
+
+    const data = await response.json();
+    console.log('Response:', data);
+    if (data.result === 'success') {
+        displayResults(data.results); // Call a function to display results
+    } else {
+        console.error('Search failed:', data);
+    }
 }
 
 function displayResults(results) {

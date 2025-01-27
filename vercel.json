@@ -11,6 +11,8 @@
       "src": "/search",
       "methods": ["POST"],
       "dest": "app.py"
-    }
+    },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

@@ -306,6 +306,25 @@ def combined_search(query):
     combined_results.extend(search_results)  # Combine both results
     return combined_results
 
+# Method to combine YouTube Data API results with search engine results
+def combined_search_with_youtube(query, api_key):
+    # Collect links from other search engines
+    search_engine_results = collect_other_links(query)
+    
+    # Fetch YouTube search results
+    youtube_results = fetch_youtube_search_results(query, api_key)
+    
+    # Extract YouTube video links
+    youtube_links = [f'https://www.youtube.com/watch?v={item["id"]["videoId"]}' for item in youtube_results]
+    
+    # Combine results
+    combined_results = {
+        'search_engine_results': search_engine_results,
+        'youtube_links': youtube_links
+    }
+    
+    return combined_results
+
 # Load environment variables from .env file
 from dotenv import load_dotenv
 import os
@@ -347,3 +366,8 @@ for query in search_queries:
 for query in search_queries:
     embed_code = generate_youtube_embed_code(query, api_key)
     print(f'YouTube embed code for query "{query}": {embed_code}')
+
+# Example usage of combined search with YouTube
+for query in search_queries:
+    combined_results = combined_search_with_youtube(query, api_key)
+    print(f'Combined search results for query "{query}": {combined_results}')

@@ -263,6 +263,55 @@ def collect_qwant_links(search_query):
                 qwant_links.append(href)
     return qwant_links
 
+# Function to fetch results from the YouTube JavaScript link
+def fetch_youtube_and_search_results(query):
+    import requests
+    # Fetch results from the provided JavaScript link
+    js_url = 'https://www.youtube.com/s/player/b0557ce3/player_ias.vflset/en_US/base.js'
+    response = requests.get(js_url)
+    if response.status_code == 200:
+        # Process the JavaScript response to extract relevant data
+        # This is a placeholder for processing logic, adjust as necessary
+        return response.text  # Return the JavaScript content or processed data
+    else:
+        return None
+
+# Method to fetch YouTube search results
+def fetch_youtube_search_results(query, api_key):
+    import requests
+    url = f'https://www.googleapis.com/youtube/v3/search?part=id&q={query}&key={api_key}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()['items']  # Return the JSON content of the YouTube search results
+    else:
+        return None
+
+# Method to fetch YouTube video IDs and generate HTML code to embed those videos
+def generate_youtube_embed_code(query, api_key):
+    # Fetch YouTube search results
+    results = fetch_youtube_search_results(query, api_key)
+    embed_code = ''
+    for item in results:
+        video_id = item['id']['videoId']  # Extract video ID
+        embed_code += f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>\n'
+    return embed_code
+
+# Method to perform a combined search
+def combined_search(query):
+    search_results = collect_other_links(query)  # Collect from other links
+    youtube_results = fetch_youtube_and_search_results(query)  # Fetch results from the JavaScript link
+    combined_results = []
+    if youtube_results:
+        combined_results.append(youtube_results)
+    combined_results.extend(search_results)  # Combine both results
+    return combined_results
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+import os
+load_dotenv()
+api_key = os.getenv('YOUTUBE_API_KEY')  # Get the API key from environment variables
+
 # Example usage of collecting YouTube links and other links
 for query in search_queries:
     youtube_links = collect_youtube_links(query)
@@ -293,3 +342,8 @@ for query in search_queries:
     print(f'MetaGer links for query "{query}": {metager_links}')
     print(f'arXiv links for query "{query}": {arxiv_links}')
     print(f'Qwant links for query "{query}": {qwant_links}')
+
+# Example usage of generating YouTube embed code
+for query in search_queries:
+    embed_code = generate_youtube_embed_code(query, api_key)
+    print(f'YouTube embed code for query "{query}": {embed_code}')

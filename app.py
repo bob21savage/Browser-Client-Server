@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import eventlet
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,7 +14,7 @@ sys.path.append(scrape_dir)
 
 from flask import Flask, send_from_directory, send_file
 from flask_cors import CORS
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, WSGIHTTPServer
 from scrape_upgrade import setup_routes
 
 # When frozen by PyInstaller, the path to the resources is different
@@ -45,7 +46,7 @@ CORS(app, resources={
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode='threading',
+    async_mode='eventlet',
     logger=True,
     engineio_logger=True
 )
@@ -85,12 +86,4 @@ setup_routes(app, socketio)
 
 if __name__ == '__main__':
     logger.info("Starting Flask-SocketIO server...")
-    port = int(os.environ.get('PORT', 5001))
-    logger.info(f"Server will run on port {port}")
-    socketio.run(
-        app,
-        host='127.0.0.1',
-        port=port,
-        debug=True,
-        use_reloader=False
-    )
+    eventlet.wsgi.server(eventlet.listen(('', 10000)), socketio.app)

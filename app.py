@@ -33,14 +33,7 @@ app = Flask(__name__,
            static_url_path='')
 
 # Configure CORS
-CORS(app, resources={
-    r"/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"],
-        "supports_credentials": True
-    }
-})
+CORS(app, resources={r"/*": {"origins": ["https://browser-client-server.onrender.com"]}})
 
 # Initialize SocketIO with minimal configuration
 socketio = SocketIO(

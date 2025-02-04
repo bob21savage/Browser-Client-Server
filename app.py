@@ -14,7 +14,7 @@ sys.path.append(scrape_dir)
 
 from flask import Flask, send_from_directory, send_file
 from flask_cors import CORS
-from flask_socketio import SocketIO, WSGIHTTPServer
+from flask_socketio import SocketIO
 from scrape_upgrade import setup_routes
 
 # When frozen by PyInstaller, the path to the resources is different

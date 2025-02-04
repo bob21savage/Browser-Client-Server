@@ -86,4 +86,4 @@ setup_routes(app, socketio)
 
 if __name__ == '__main__':
     logger.info("Starting Flask-SocketIO server...")
-    eventlet.wsgi.server(eventlet.listen(('', 10000)), socketio.app)
+    eventlet.wsgi.server(eventlet.listen(('', 10000)), app)

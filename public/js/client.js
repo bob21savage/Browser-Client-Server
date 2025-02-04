@@ -1,5 +1,5 @@
 // Get the server URL dynamically
-const serverUrl = window.location.protocol + '//' + window.location.hostname + ':5001';
+const serverUrl = 'https://browser-client-server.onrender.com:10000/socket.io/';
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {

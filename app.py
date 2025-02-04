@@ -36,13 +36,7 @@ app = Flask(__name__,
 CORS(app, resources={r"/*": {"origins": ["https://browser-client-server.onrender.com"]}})
 
 # Initialize SocketIO with minimal configuration
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='eventlet',
-    logger=True,
-    engineio_logger=True
-)
+socketio = SocketIO(app, cors_allowed_origins="https://browser-client-server.onrender.com")
 
 @app.route('/')
 def index():

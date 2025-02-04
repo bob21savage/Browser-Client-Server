@@ -1,5 +1,5 @@
 // Get the server URL dynamically
-const serverUrl = 'https://browser-client-server.onrender.com/socket.io/';
+const serverUrl = 'https://browser-client-server.onrender.com/'; // Update the Socket.IO connection URL for production
 
 // Connect to Socket.IO server
 const socket = io(serverUrl, {

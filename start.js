@@ -10,15 +10,14 @@ import http from 'http';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure this file runs in a Node.js environment
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 3000; // Use environment variable for port
-const flaskUrl = 'https://browser-client-server.vercel.app'; // Updated to the Vercel deployment URL without port
+const port = process.env.PORT || 3000;
+const flaskUrl = process.env.FLASK_URL || 'http://localhost:5001';
 
 // Enable CORS
 app.use(cors({
-    origin: 'https://browser-client-server.vercel.app', // Allow only your Vercel URL
+    origin: "*",
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true
 }));
@@ -61,7 +60,7 @@ socket.on('connect', () => {
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
     retryCount++;
-    setTimeout(connectWithRetry, 2000); // Use function reference instead of string
+    setTimeout(connectWithRetry, 2000);
 });
 
 socket.on('disconnect', () => {
@@ -70,10 +69,10 @@ socket.on('disconnect', () => {
 
 // Proxy configuration
 const proxyOptions = {
-    target: flaskUrl,  // Updated target to use Vercel URL
+    target: flaskUrl,
     changeOrigin: true,
     ws: true,  // Enable WebSocket proxy
-    secure: true,
+    secure: false,
     logLevel: 'debug',
     onError: (err, req, res) => {
         console.error('Proxy error:', err);
@@ -82,7 +81,7 @@ const proxyOptions = {
         });
         res.end('Proxy error: ' + err);
     },
-    onProxyReq: (proxyReq) => {
+    onProxyReq: (proxyReq, req, res) => {
         // Add custom headers if needed
         proxyReq.setHeader('X-Special-Proxy-Header', 'video-search');
     }
@@ -97,7 +96,7 @@ app.use('/socket.io', createProxyMiddleware({
 app.use('/api', createProxyMiddleware(proxyOptions));
 
 // Serve index.html for all other routes
-app.get('*', (_, res) => {
+app.get('*', (req, res) => {
     res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
@@ -132,7 +131,7 @@ async function startServer() {
     
     if (!isPortAvailable) {
         console.error('Could not find an available port. Please free up some ports and try again.');
-        process.exit(1); // Use process.exit to exit the Node.js process
+        process.exit(1);
     }
     
     server.listen(currentPort, () => {
@@ -153,7 +152,7 @@ function cleanup() {
     socket.close();
     server.close(() => {
         console.log('Server closed');
-        process.exit(0); // Use process.exit to exit the Node.js process
+        process.exit(0);
     });
 }
 
@@ -163,5 +162,5 @@ process.on('SIGTERM', cleanup);
 // Start the server
 startServer().catch(err => {
     console.error('Failed to start server:', err);
-    process.exit(1); // Use process.exit to exit the Node.js process
+    process.exit(1);
 });

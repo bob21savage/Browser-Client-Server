@@ -1,11 +1,6 @@
 import os
 import sys
 import logging
-from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory, send_file
-from flask_cors import CORS
-from flask_socketio import SocketIO
-import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,8 +9,12 @@ logger = logging.getLogger(__name__)
 # Add the scrape directory to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 scrape_dir = os.path.join(current_dir, 'scrape')
-if scrape_dir not in sys.path:
-    sys.path.append(scrape_dir)
+sys.path.append(scrape_dir)
+
+from flask import Flask, send_from_directory, send_file
+from flask_cors import CORS
+from flask_socketio import SocketIO
+from scrape_upgrade import setup_routes
 
 # When frozen by PyInstaller, the path to the resources is different
 if getattr(sys, 'frozen', False):
@@ -31,29 +30,25 @@ logger.info(f"Static folder path: {static_folder}")
 app = Flask(__name__, 
            static_folder=static_folder,
            static_url_path='')
-CORS(app)  # Enable CORS for all routes
 
-# Initialize SocketIO with proper configuration
-socketio = SocketIO(app)
+# Configure CORS
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
 
-from scrape_upgrade import VideoSearchCrawler, setup_routes
-
-@app.route('/search', methods=['POST'])
-async def search():
-    data = request.json
-    query = data.get('query')
-
-    if not query:
-        return jsonify({'error': 'Query parameter is required.'}), 400
-
-    try:
-        logger.info(f"Received search query: {query}")
-        crawler = VideoSearchCrawler(query)
-        results = await crawler.collect_results({'videos': True, 'websites': True})
-        return jsonify(results)
-    except Exception as e:
-        logger.error(f"Error during search: {str(e)}")  # Log the error for debugging
-        return jsonify({'error': 'An error occurred during the search.'}), 500
+# Initialize SocketIO with minimal configuration
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True
+)
 
 @app.route('/')
 def index():
@@ -85,17 +80,17 @@ def serve_static(path):
         logger.error(f"Error serving static file {path}: {str(e)}")
         return f"Error: {str(e)}", 500
 
-@app.route('/favicon.ico')
-def favicon():
-    try:
-        logger.info("Serving favicon.ico")
-        return send_from_directory(static_folder, 'favicon.ico')
-    except Exception as e:
-        logger.error(f"Error serving favicon.ico: {str(e)}")
-        return f"Error: {str(e)}", 500
-
 # Set up all routes and socket handlers
 setup_routes(app, socketio)
 
 if __name__ == '__main__':
-    logger.info("Starting Gunicorn server...")
+    logger.info("Starting Flask-SocketIO server...")
+    port = int(os.environ.get('PORT', 5001))
+    logger.info(f"Server will run on port {port}")
+    socketio.run(
+        app,
+        host='127.0.0.1',
+        port=port,
+        debug=True,
+        use_reloader=False
+    )

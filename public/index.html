@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video & Web Search</title>
+    <title>Video Search</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #2563eb;
             --primary-hover: #1d4ed8;
-            --background: #000000;
-            --text: #ffffff;
-            --text-light: #cccccc;
-            --border: #333333;
+            --background: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
@@ -53,7 +53,7 @@
         }
 
         .search-container {
-            background: #111111;
+            background: white;
             padding: 1.5rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
@@ -72,8 +72,6 @@
             border-radius: 0.5rem;
             font-size: 1rem;
             transition: border-color 0.2s;
-            background-color: #222222;
-            color: var(--text);
         }
 
         #search-input:focus {
@@ -124,7 +122,7 @@
         }
 
         .result-item {
-            background: #111111;
+            background: white;
             border-radius: 1rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
@@ -135,7 +133,6 @@
         .result-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            background: #222222;
         }
 
         .video-embed {
@@ -145,7 +142,6 @@
             height: 0;
             overflow: hidden;
             border-radius: 0.5rem;
-            background-color: #000000;
         }
 
         .video-embed iframe {
@@ -168,7 +164,7 @@
             display: block;
             font-size: 1.25rem;
             font-weight: 600;
-            color: #4a9eff;
+            color: var(--text);
             text-decoration: none;
             margin-bottom: 0.5rem;
         }
@@ -199,53 +195,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .subtitle {
-            color: var(--text-light);
-            margin-bottom: 2rem;
-        }
-
-        .search-options {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            margin: 0 1rem;
-        }
-
-        .search-options label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-        }
-
-        .search-options input[type="checkbox"] {
-            width: 1rem;
-            height: 1rem;
-            cursor: pointer;
-        }
-
-        .result-item.website {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .website-icon {
-            width: 32px;
-            height: 32px;
-            flex-shrink: 0;
-        }
-
-        .website-content {
-            flex: 1;
-        }
-
-        .website-url {
-            color: var(--text-light);
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-            word-break: break-all;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -268,34 +217,25 @@
 <body>
     <div class="container">
         <header>
-            <h1>Video & Web Search</h1>
-            <p class="subtitle">Search for videos and websites across multiple platforms</p>
+            <h1>Video Search</h1>
+            <p>Search for videos across multiple platforms</p>
         </header>
 
         <main>
             <div class="search-container">
                 <form id="search-form">
                     <input type="text" id="search-input" placeholder="Enter your search query..." required>
-                    <div class="search-options">
-                        <label>
-                            <input type="checkbox" id="search-videos" checked>
-                            Videos
-                        </label>
-                        <label>
-                            <input type="checkbox" id="search-websites" checked>
-                            Websites
-                        </label>
-                    </div>
                     <button type="submit" id="search-button">Search</button>
                 </form>
-                <div id="status" class="status"></div>
-                <div id="stats"></div>
             </div>
+
+            <div id="status" class="status status-info">Ready to search</div>
+            <div id="stats"></div>
             <div id="results"></div>
         </main>
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="/js/minimal_client.js"></script>
+    <script src="/js/client.js"></script>
 </body>
 </html>

@@ -8,3 +8,4 @@ aiohttp>=3.8.1
 html2text>=2020.1.16
 requests>=2.32.0
 gevent-websocket>=0.10.1
+flask_cors>=3.0.10

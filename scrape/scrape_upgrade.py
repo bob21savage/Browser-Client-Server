@@ -55,15 +55,15 @@ class WebSearchCrawler:
             results = await asyncio.gather(*tasks)
             for engine_results in results:
                 if engine_results:
-                    all_results.extend(engine_results)
-                    logger.info(f"Found {len(engine_results)} results from {engine_results[0]['platform'] if engine_results else 'Unknown'}")
+                    all_results.extend(engine_results['results'])
+                    logger.info(f"Found {engine_results['count']} results from {engine_results['results'][0]['platform'] if engine_results['results'] else 'Unknown'}")
             random.shuffle(all_results)
             return all_results
         except Exception as e:
             logger.error(f"Error in collect_results: {str(e)}")
             raise
 
-    async def search_videos_on_platforms(self, query: str) -> List[Dict]:
+    async def search_videos_on_platforms(self, query: str) -> Dict[str, Any]:
         """Search for videos across various platforms without using APIs."""
         results = []
         seen_links = set()  # To track seen video URLs
@@ -102,10 +102,10 @@ class WebSearchCrawler:
                     results.append(video)
                     seen_links.add(video['url'])
 
-            return results
+            return {'count': len(results), 'results': results}
         except Exception as e:
             logger.error(f"Error searching platforms: {str(e)}")
-            return results
+            return {'count': 0, 'results': []}
 
     async def _search_youtube(self, query: str) -> List[Dict]:
         """Search for videos on YouTube."""

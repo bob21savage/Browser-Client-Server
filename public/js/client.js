@@ -312,14 +312,15 @@ if (searchForm) {
 if (downloadButton) {
     downloadButton.addEventListener('click', async () => {
         const selectedVideos = Array.from(document.querySelectorAll('.video-checkbox:checked')).map(cb => cb.dataset.url);
-        
+        const cookieFilePath = prompt("Please enter the path to your cookies file:"); // Prompt user for cookies file path
+
         if (selectedVideos.length > 0) {
             const response = await fetch('/download_videos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ urls: selectedVideos })
+                body: JSON.stringify({ urls: selectedVideos, cookiefile: cookieFilePath })
             });
             
             if (response.ok) {

@@ -402,13 +402,18 @@ def setup_routes(app, socketio):
     @app.route('/download_videos', methods=['POST'])
     def download_videos():
         data = request.json
-        app.logger.debug(f"Received data: {data}")  # Log the incoming data
+        app.logger.debug(f"Received data: {data}")
         urls = data.get('urls', [])
-        
+        cookie_file = data.get('cookiefile')  # Get the cookies file path from the request
+
+        if not cookie_file or not os.path.exists(cookie_file):
+            return jsonify({'status': 'error', 'message': 'No valid cookies file found. Please provide a valid path.'}), 400
+
         try:
             for url in urls:
                 ydl_opts = {
                     'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
+                    'cookiefile': cookie_file,  # Use the provided cookies file
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])

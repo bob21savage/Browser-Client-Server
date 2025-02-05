@@ -27,15 +27,16 @@ cursor = db_connection.cursor()
 # Create the search history table if it doesn't exist
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS search_history (
-        query TEXT,
-        timestamp TEXT
-    )
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT NOT NULL,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    );
 ''')
 db_connection.commit()
 
 def insert_search_query(query):
     cursor = db_connection.cursor()
-    cursor.execute("INSERT INTO search_history (query, timestamp) VALUES (?, ?)", (query, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
     db_connection.commit()
 
 class WebSearchCrawler:

@@ -443,8 +443,11 @@ def setup_routes(app, socketio):
             soup = BeautifulSoup(response.text, 'html.parser')
             results = []
             
+            # Debugging: Print the entire HTML response for inspection
+            logger.debug(soup.prettify())  # Log the HTML structure for debugging
+
             # Adjust selectors based on YouTube's HTML structure
-            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Use the appropriate tag for videos
+            for video in soup.find_all('ytd-video-renderer', limit=limit):
                 title_element = video.find('h3')
                 if title_element:
                     title = title_element.text.strip()
@@ -452,6 +455,10 @@ def setup_routes(app, socketio):
                     if video_link and 'href' in video_link.attrs:
                         video_id = video_link['href'].split('v=')[1]  # Extract video ID from the link
                         results.append({'title': title, 'videoId': video_id})
+                    else:
+                        logger.warning("Video link not found or does not contain 'href'.")
+                else:
+                    logger.warning("Title element not found.")
         
             return {
                 'results': results,

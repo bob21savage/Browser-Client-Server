@@ -32,6 +32,7 @@ let totalResults = 0;
 let currentPage = 1;
 const resultsPerPage = 10;
 let query = '';
+let nextPageToken = null; // Variable to store the next page token
 
 // Socket.IO event handlers
 socket.on('connect', () => {
@@ -231,51 +232,21 @@ function addSearchResult(result) {
     }, 10);
 }
 
-function displayResults(results) {
-    const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear previous results
-
-    results.forEach(result => {
-        const resultElement = document.createElement('div');
-        resultElement.innerHTML = `
-            <h3>${result.title}</h3>
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/${result.videoId}" frameborder="0" allowfullscreen></iframe>
-        `;
-        resultsContainer.appendChild(resultElement);
-    });
-}
-
-function displaySearchHistory(data) {
-    const resultsContainer = document.getElementById('history-results');
-    resultsContainer.innerHTML = ''; // Clear previous results
-
-    if (data.length === 0) {
-        resultsContainer.innerHTML = '<p>No search history available.</p>';
-        return;
-    }
-
-    data.forEach(item => {
-        const resultDiv = document.createElement('div');
-        resultDiv.textContent = `${item.query} - ${new Date(item.timestamp).toLocaleString()}`;
-        resultsContainer.appendChild(resultDiv);
-    });
-}
-
-async function fetchResults() {
-    console.log(`Fetching results for query: ${query}, page: ${currentPage}, limit: ${resultsPerPage}`);
+async function fetchSearchResults(query, pageToken = '') {
+    console.log(`Fetching results for query: ${query}, pageToken: ${pageToken}`);
     try {
-        const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
+        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}&pageToken=${pageToken}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         
-        console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
+        console.log("Query parameters:", { query, pageToken });
         console.log("Response data:", data);
         
         if (data && Array.isArray(data.results)) {
-            displayResults(data.results);
-            updatePagination(data.count);
+            displaySearchResults(data.results);
+            nextPageToken = data.nextPageToken; // Store the next page token
         } else {
             console.error("Unexpected response structure:", data);
         }
@@ -285,24 +256,30 @@ async function fetchResults() {
     }
 }
 
-function updatePagination(totalResults) {
-    const totalPages = Math.ceil(totalResults / resultsPerPage);
-    pageInfoElement.innerText = `Page ${currentPage} of ${totalPages}`;
-    prevPageButton.disabled = currentPage === 1;
-    nextPageButton.disabled = currentPage === totalPages;
-}
-
-prevPageButton.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        fetchResults();
+function displaySearchResults(results) {
+    const resultsContainer = document.getElementById('results');
+    // Clear previous results
+    while (resultsContainer.firstChild) {
+        resultsContainer.removeChild(resultsContainer.firstChild);
     }
-});
 
-nextPageButton.addEventListener('click', () => {
-    currentPage++;
-    fetchResults();
-});
+    results.forEach(video => {
+        const videoElement = document.createElement('div');
+        videoElement.innerHTML = `
+            <h3>${video.title}</h3>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/${video.videoId}" frameborder="0" allowfullscreen></iframe>
+        `;
+        resultsContainer.appendChild(videoElement);
+    });
+
+    // Add a button to load more results if there's a next page token
+    if (nextPageToken) {
+        const loadMoreButton = document.createElement('button');
+        loadMoreButton.innerText = 'Load More';
+        loadMoreButton.onclick = () => fetchSearchResults(query, nextPageToken);
+        resultsContainer.appendChild(loadMoreButton);
+    }
+}
 
 // Event Listeners
 if (searchForm) {
@@ -320,8 +297,7 @@ if (searchForm) {
             return;
         }
         
-        currentPage = 1;
-        fetchResults();
+        fetchSearchResults(query);
     });
 }
 

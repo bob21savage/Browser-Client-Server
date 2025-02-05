@@ -516,7 +516,12 @@ def setup_routes(app, socketio):
                 emit('search_error', {'error': 'Please enter a search query'})
                 return
 
-            insert_search_query(query)  # Insert the search query into the database
+            try:
+                insert_search_query(query)  # Insert the search query into the database
+            except Exception as e:
+                logger.error(f"Error logging search query: {str(e)}")
+                emit('search_error', {'error': 'Failed to log search query'})
+                return
             
             search_in_progress = True
             logger.info(f"Starting search for: {query}")

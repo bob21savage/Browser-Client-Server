@@ -68,6 +68,11 @@ socket.on('new_result', (data) => {
 socket.on('search_completed', (data) => {
     console.log('Search completed:', data);
     hideLoadingIndicator();
+    if (data.error) {
+        console.error(data.error);
+        alert(data.error); // Show an alert to the user
+        return;
+    }
     updateStatus(`Search completed. Found ${data.total} results.`, 'success');
     updateSearchStats(data);
     if (searchButton) searchButton.disabled = false;
@@ -76,6 +81,11 @@ socket.on('search_completed', (data) => {
 socket.on('search_error', (data) => {
     console.error('Search error:', data);
     hideLoadingIndicator();
+    if (data.error) {
+        console.error(data.error);
+        alert(data.error); // Show an alert to the user
+        return;
+    }
     updateStatus(`Error: ${data.error}`, 'error');
     if (searchButton) searchButton.disabled = false;
 });

@@ -238,8 +238,12 @@ function displayResults(results) {
 }
 
 async function fetchResults() {
+    console.log(`Fetching results for query: ${query}, page: ${currentPage}, limit: ${resultsPerPage}`);
     const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
     const data = await response.json();
+    
+    console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
+    console.log("Response data:", data);
     
     // Ensure data is structured correctly
     if (data && Array.isArray(data.results)) {

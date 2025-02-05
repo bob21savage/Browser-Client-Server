@@ -450,19 +450,17 @@ def setup_routes(app, socketio):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            results = []
-            for item in data.get('items', []):
-                if item['id']['kind'] == 'youtube#video':  # Check if the item is a video
-                    results.append({
-                        'title': item['snippet']['title'],
-                        'videoId': item['id']['videoId']
-                    })
-            next_page_token = data.get('nextPageToken')  # Capture the nextPageToken
-            logger.debug(f"Search results: {results}, nextPageToken: {next_page_token}")
-            return {"results": results, "count": len(results), "nextPageToken": next_page_token}
+            # Extract the nextPageToken from the response
+            next_page_token = data.get('nextPageToken', None)
+            results = data.get('items', [])
+            return {
+                'results': results,
+                'nextPageToken': next_page_token,
+                'count': len(results)
+            }
         else:
-            logger.error(f"Error fetching from YouTube API: {response.status_code} - {response.text}")
-            return {"results": [], "count": 0}
+            logger.error(f"Error fetching videos: {response.status_code}")
+            return {'results': [], 'nextPageToken': None, 'count': 0}
 
     @app.route('/download_videos', methods=['POST'])
     def download_videos():

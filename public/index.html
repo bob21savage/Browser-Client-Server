@@ -212,18 +212,6 @@
                 width: 100%;
             }
         }
-
-        #video-slideshow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #video-container {
-            margin: 0 20px;
-        }
-        button {
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -244,49 +232,10 @@
             <div id="status" class="status status-info">Ready to search</div>
             <div id="stats"></div>
             <div id="results"></div>
-            <div id="video-slideshow">
-                <button id="prev-button">&lt;</button>
-                <div id="video-container">
-                    <!-- Video results will be dynamically inserted here -->
-                </div>
-                <button id="next-button">&gt;</button>
-            </div>
         </main>
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/js/client.js"></script>
-    <script>
-        let currentIndex = 0;
-        const videoResults = []; // Assume this gets populated with video data
-
-        function updateVideoDisplay() {
-            const videoContainer = document.getElementById('video-container');
-            videoContainer.innerHTML = '';
-
-            // Display the current video result
-            const video = videoResults[currentIndex];
-            if (video) {
-                videoContainer.innerHTML = `<h3>${video.title}</h3><img src="${video.thumbnail}" alt="${video.title}"><p>${video.description}</p>`;
-            }
-        }
-
-        document.getElementById('prev-button').addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateVideoDisplay();
-            }
-        });
-
-        document.getElementById('next-button').addEventListener('click', () => {
-            if (currentIndex < videoResults.length - 1) {
-                currentIndex++;
-                updateVideoDisplay();
-            }
-        });
-
-        // Initial display
-        updateVideoDisplay();
-    </script>
 </body>
 </html>

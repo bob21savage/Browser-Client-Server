@@ -239,7 +239,8 @@ function displayResults(results) {
             <h3>${result.title}</h3>
             <img src="${result.thumbnail}" alt="${result.title}">
             <p>${result.description}</p>
-            ${result.embed}
+            <input type="checkbox" class="video-checkbox" data-url="${result.url}"> Select to download
+            ${createVideoEmbed(result.url)}
         `;
         resultsContainer.appendChild(resultElement);
     });

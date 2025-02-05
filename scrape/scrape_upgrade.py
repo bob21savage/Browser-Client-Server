@@ -404,14 +404,18 @@ def setup_routes(app, socketio):
         data = request.json
         urls = data.get('urls', [])
         
-        for url in urls:
-            ydl_opts = {
-                'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+        try:
+            for url in urls:
+                ydl_opts = {
+                    'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
         
-        return jsonify({'status': 'success', 'message': 'Downloads started.'})
+            return jsonify({'status': 'success', 'message': 'Downloads started.'})
+        except Exception as e:
+            app.logger.error(f"Error downloading videos: {e}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
 
     @socketio.on('connect')
     def handle_connect():

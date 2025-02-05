@@ -37,8 +37,12 @@ db_connection.commit()
 def insert_search_query(query):
     logger.debug(f"Inserting query into database: {query}")  # Debug log
     cursor = db_connection.cursor()
-    cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
-    db_connection.commit()
+    try:
+        cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
+        db_connection.commit()
+        logger.debug("Query inserted successfully.")
+    except Exception as e:
+        logger.error(f"Failed to insert query: {str(e)}")
 
 class WebSearchCrawler:
     def __init__(self, base_directory: str, topic: str = None):
@@ -380,11 +384,9 @@ class WebSearchCrawler:
         return results
 
 def fetch_search_history_from_db():
-    """Retrieve and sort search history alphabetically."""
     cursor = db_connection.cursor()
-    cursor.execute("SELECT query, timestamp FROM search_history ORDER BY query ASC")
-    results = cursor.fetchall()
-    return [{'query': row[0], 'timestamp': row[1]} for row in results]
+    cursor.execute("SELECT * FROM search_history ORDER BY timestamp DESC")
+    return cursor.fetchall()
 
 def setup_routes(app, socketio):
     """Set up Flask routes and Socket.IO event handlers"""

@@ -386,6 +386,18 @@ def setup_routes(app, socketio):
                     results.append(os.path.join(root, name))
         return {'results': results}
 
+    @app.route('/search_videos', methods=['GET'])
+    def search_videos():
+        query = request.args.get('query', '')
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 10))
+        
+        # Create a crawler instance and perform the search
+        crawler = WebSearchCrawler('.', query)
+        results = asyncio.run(crawler.search_videos_on_platforms(query, page, limit))
+        
+        return {'count': results['count'], 'results': results['results']}  # Ensure this returns the expected structure
+
     @socketio.on('connect')
     def handle_connect():
         logger.info("Client connected")

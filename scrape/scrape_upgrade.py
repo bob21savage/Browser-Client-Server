@@ -14,10 +14,24 @@ from typing import List, Dict, Any
 from flask_socketio import emit
 from flask import request, jsonify
 import yt_dlp
+import sqlite3
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Establish a database connection
+db_connection = sqlite3.connect('search_history.db')
+cursor = db_connection.cursor()
+
+# Create the search history table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS search_history (
+        query TEXT,
+        timestamp TEXT
+    )
+''')
+db_connection.commit()
 
 class WebSearchCrawler:
     def __init__(self, base_directory: str, topic: str = None):
@@ -357,6 +371,13 @@ class WebSearchCrawler:
                 if query.lower() in name.lower() and any(name.lower().endswith(ext) for ext in video_extensions):
                     results.append(os.path.join(root, name))
         return results
+
+def fetch_search_history_from_db():
+    """Retrieve and sort search history alphabetically."""
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT query, timestamp FROM search_history ORDER BY query ASC")
+    results = cursor.fetchall()
+    return [{'query': row[0], 'timestamp': row[1]} for row in results]
 
 def setup_routes(app, socketio):
     """Set up Flask routes and Socket.IO event handlers"""

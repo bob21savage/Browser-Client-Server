@@ -35,6 +35,7 @@ cursor.execute('''
 db_connection.commit()
 
 def insert_search_query(query):
+    logger.debug(f"Inserting query into database: {query}")  # Debug log
     cursor = db_connection.cursor()
     cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
     db_connection.commit()

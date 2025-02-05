@@ -452,8 +452,9 @@ def setup_routes(app, socketio):
                 title_element = video.find('a', {'id': 'video-title'})
                 if title_element:
                     title = title_element.text.strip()
-                    video_id = title_element['href'].split('v=')[1]  # Extract video ID from the link
-                    results.append({'title': title, 'videoId': video_id})
+                    video_id = title_element['href'].split('v=')[1] if 'href' in title_element.attrs else None  # Extract video ID from the link
+                    if video_id:
+                        results.append({'title': title, 'videoId': video_id})
             
             # Check if results are found
             if not results:

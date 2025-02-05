@@ -239,17 +239,24 @@ function displayResults(results) {
 
 async function fetchResults() {
     console.log(`Fetching results for query: ${query}, page: ${currentPage}, limit: ${resultsPerPage}`);
-    const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
-    const data = await response.json();
-    
-    console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
-    console.log("Response data:", data);
-    
-    if (data && Array.isArray(data.results)) {
-        displayResults(data.results);
-        updatePagination(data.count);
-    } else {
-        console.error("Unexpected response structure:", data);
+    try {
+        const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
+        console.log("Response data:", data);
+        
+        if (data && Array.isArray(data.results)) {
+            displayResults(data.results);
+            updatePagination(data.count);
+        } else {
+            console.error("Unexpected response structure:", data);
+        }
+    } catch (error) {
+        console.error("Fetch error:", error);
     }
 }
 

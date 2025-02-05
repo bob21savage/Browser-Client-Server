@@ -25,6 +25,8 @@ const pageInfoElement = document.getElementById('page-info');
 const prevPageButton = document.getElementById('prev-page');
 const nextPageButton = document.getElementById('next-page');
 const downloadButton = document.getElementById('download-selected');
+const searchHistoryButton = document.getElementById('world-history-btn');
+const searchHistoryContainer = document.getElementById('search-history');
 
 let totalResults = 0;
 let currentPage = 1;
@@ -246,6 +248,22 @@ function displayResults(results) {
     });
 }
 
+function displaySearchHistory(data) {
+    const resultsContainer = document.getElementById('history-results');
+    resultsContainer.innerHTML = ''; // Clear previous results
+
+    if (data.length === 0) {
+        resultsContainer.innerHTML = '<p>No search history available.</p>';
+        return;
+    }
+
+    data.forEach(item => {
+        const resultDiv = document.createElement('div');
+        resultDiv.textContent = `${item.query} - ${new Date(item.timestamp).toLocaleString()}`;
+        resultsContainer.appendChild(resultDiv);
+    });
+}
+
 async function fetchResults() {
     console.log(`Fetching results for query: ${query}, page: ${currentPage}, limit: ${resultsPerPage}`);
     try {
@@ -336,6 +354,18 @@ if (downloadButton) {
             }
         } else {
             alert('Please select at least one video to download.');
+        }
+    });
+}
+
+if (searchHistoryButton) {
+    searchHistoryButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/search_history');
+            const data = await response.json();
+            displaySearchHistory(data);
+        } catch (error) {
+            console.error('Error fetching search history:', error);
         }
     });
 }

@@ -429,6 +429,12 @@ def setup_routes(app, socketio):
             app.logger.error(f"Error downloading videos: {e}")
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/search_history', methods=['GET'])
+    def get_search_history():
+        # Fetch search history from the database
+        results = fetch_search_history_from_db()  # Implement this function to query the database
+        return jsonify(results)
+
     @socketio.on('connect')
     def handle_connect():
         logger.info("Client connected")

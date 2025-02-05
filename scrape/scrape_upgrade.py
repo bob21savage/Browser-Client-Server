@@ -451,7 +451,13 @@ def setup_routes(app, socketio):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            results = [{'title': item['snippet']['title'], 'videoId': item['id']['videoId']} for item in data['items']]
+            results = []
+            for item in data.get('items', []):
+                if item['id']['kind'] == 'youtube#video':  # Check if the item is a video
+                    results.append({
+                        'title': item['snippet']['title'],
+                        'videoId': item['id']['videoId']
+                    })
             logger.debug(f"Search results: {results}")
             return {"results": results, "count": len(results)}
         else:

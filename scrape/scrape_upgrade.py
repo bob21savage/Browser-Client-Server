@@ -449,17 +449,15 @@ def setup_routes(app, socketio):
             
             # Find video elements in the HTML
             for video in soup.find_all('ytd-video-renderer'):
-                title_element = video.find('h3')
+                title_element = video.find('a', {'id': 'video-title'})
                 if title_element:
                     title = title_element.text.strip()
-                    video_link = video.find('a', {'id': 'video-title'})
-                    if video_link and 'href' in video_link.attrs:
-                        video_id = video_link['href'].split('v=')[1]  # Extract video ID from the link
-                        results.append({'title': title, 'videoId': video_id})
+                    video_id = title_element['href'].split('v=')[1]  # Extract video ID from the link
+                    results.append({'title': title, 'videoId': video_id})
             
             return {
                 'results': results,
-                'nextPageToken': None,  # YouTube's search results don't use nextPageToken in the same way
+                'nextPageToken': None,
                 'count': len(results)
             }
         else:

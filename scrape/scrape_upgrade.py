@@ -16,10 +16,14 @@ from flask_socketio import emit
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+class VideoSearchCrawler:
+    def __init__(self, topic):
+        # Initialize main topic, search results, and seen links
         self.main_topic = topic
         self.search_results = []
         self.seen_links = set()
-        
+
         # Initialize HTML converter
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_links = False
@@ -38,6 +42,7 @@ logger = logging.getLogger(__name__)
             'Sec-Fetch-User': '?1',
             'Cache-Control': 'max-age=0'
         }
+
 
     async def collect_results(self):
         """Collect video results from multiple sources"""

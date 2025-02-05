@@ -16,6 +16,10 @@ from flask import request, jsonify
 from flask_cors import CORS
 import yt_dlp
 import sqlite3
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -431,43 +435,37 @@ def setup_routes(app, socketio):
         query = data.get('query')
         logger.debug(f"Searching videos with query: {query}")
 
-        results = perform_video_search(query, None, 10)
+        results = perform_video_search(query)
         logger.debug(f"Search results: {results}")  # Log the results before returning
         return jsonify(results)
 
-    def perform_video_search(query, page_token, limit):
-        url = f'https://www.youtube.com/results?search_query={query}'  # YouTube search URL
-        response = requests.get(url)
+    def perform_video_search(query):
+        # Set up Selenium WebDriver
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+        driver.get(f'https://www.youtube.com/results?search_query={query}')
         
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            results = []
-            
-            # Debugging: Print the entire HTML response for inspection
-            logger.debug(soup.prettify())  # Log the HTML structure for debugging
+        # Wait for the page to load
+        driver.implicitly_wait(10)  # Wait for elements to load
 
-            # Adjust selectors based on YouTube's HTML structure
-            for video in soup.find_all('ytd-video-renderer', limit=limit):
-                title_element = video.find('h3')
-                if title_element:
-                    title = title_element.text.strip()
-                    video_link = video.find('a', {'id': 'video-title'})
-                    if video_link and 'href' in video_link.attrs:
-                        video_id = video_link['href'].split('v=')[1]  # Extract video ID from the link
-                        results.append({'title': title, 'videoId': video_id})
-                    else:
-                        logger.warning("Video link not found or does not contain 'href'.")
-                else:
-                    logger.warning("Title element not found.")
-        
-            return {
-                'results': results,
-                'nextPageToken': None,  # YouTube's search results don't use nextPageToken in the same way
-                'count': len(results)
-            }
-        else:
-            logger.error(f"Error fetching videos: {response.status_code} - {response.text}")
-            return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Error fetching videos'}
+        # Get the page source and parse it
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        results = []
+
+        for video in soup.find_all('ytd-video-renderer'):
+            title_element = video.find('h3')
+            if title_element:
+                title = title_element.text.strip()
+                video_link = video.find('a', {'id': 'video-title'})
+                if video_link and 'href' in video_link.attrs:
+                    video_id = video_link['href'].split('v=')[1]  # Extract video ID from the link
+                    results.append({'title': title, 'videoId': video_id})
+
+        driver.quit()  # Close the browser
+        return {
+            'results': results,
+            'nextPageToken': None,  # YouTube's search results don't use nextPageToken in the same way
+            'count': len(results)
+        }
 
     @app.route('/download_videos', methods=['POST'])
     def download_videos():

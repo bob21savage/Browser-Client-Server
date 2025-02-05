@@ -464,6 +464,7 @@ def setup_routes(app, socketio):
 
     @app.route('/search', methods=['POST'])
     def perform_search():
+        logger.debug("Perform search function called.")
         data = request.json
         query = data.get('query')
         
@@ -472,9 +473,7 @@ def setup_routes(app, socketio):
             return
         
         try:
-            cursor = db_connection.cursor()
-            cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
-            db_connection.commit()
+            insert_search_query(query)  # Log the search query
         except Exception as e:
             logger.error(f"Error logging search query: {str(e)}")
             emit('search_error', {'error': 'Failed to log search query'})

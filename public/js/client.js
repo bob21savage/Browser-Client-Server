@@ -245,7 +245,6 @@ async function fetchResults() {
     console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
     console.log("Response data:", data);
     
-    // Ensure data is structured correctly
     if (data && Array.isArray(data.results)) {
         displayResults(data.results);
         updatePagination(data.count);

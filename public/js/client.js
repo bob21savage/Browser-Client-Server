@@ -221,6 +221,22 @@ function addSearchResult(result) {
     }, 10);
 }
 
+function displayResults(results) {
+    const resultsContainer = document.getElementById('results');
+    resultsContainer.innerHTML = ''; // Clear previous results
+
+    results.forEach(result => {
+        const resultElement = document.createElement('div');
+        resultElement.innerHTML = `
+            <h3>${result.title}</h3>
+            <img src="${result.thumbnail}" alt="${result.title}">
+            <p>${result.description}</p>
+            ${result.embed}
+        `;
+        resultsContainer.appendChild(resultElement);
+    });
+}
+
 async function fetchResults() {
     const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
     const data = await response.json();

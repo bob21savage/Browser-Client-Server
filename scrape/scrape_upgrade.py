@@ -12,7 +12,8 @@ from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
-from flask import request
+from flask import request, jsonify
+import yt_dlp
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -397,6 +398,20 @@ def setup_routes(app, socketio):
         results = asyncio.run(crawler.search_videos_on_platforms(query, page, limit))
         
         return {'count': results['count'], 'results': results['results']}  # Ensure this returns the expected structure
+
+    @app.route('/download_videos', methods=['POST'])
+    def download_videos():
+        data = request.json
+        urls = data.get('urls', [])
+        
+        for url in urls:
+            ydl_opts = {
+                'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        
+        return jsonify({'status': 'success', 'message': 'Downloads started.'})
 
     @socketio.on('connect')
     def handle_connect():

@@ -24,6 +24,7 @@ const statsElement = document.getElementById('stats');
 const pageInfoElement = document.getElementById('page-info');
 const prevPageButton = document.getElementById('prev-page');
 const nextPageButton = document.getElementById('next-page');
+const downloadButton = document.getElementById('download-selected');
 
 let totalResults = 0;
 let currentPage = 1;
@@ -213,6 +214,13 @@ function addSearchResult(result) {
     `;
     resultElement.appendChild(metadata);
     
+    // Add checkbox for download
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'video-checkbox';
+    checkbox.dataset.url = result.url;
+    resultElement.appendChild(checkbox);
+    
     // Add to results container with animation
     resultElement.style.opacity = '0';
     resultsContainer.appendChild(resultElement);
@@ -297,6 +305,30 @@ if (searchForm) {
         
         currentPage = 1;
         fetchResults();
+    });
+}
+
+if (downloadButton) {
+    downloadButton.addEventListener('click', async () => {
+        const selectedVideos = Array.from(document.querySelectorAll('.video-checkbox:checked')).map(cb => cb.dataset.url);
+        
+        if (selectedVideos.length > 0) {
+            const response = await fetch('/download_videos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ urls: selectedVideos })
+            });
+            
+            if (response.ok) {
+                console.log('Download started for selected videos.');
+            } else {
+                console.error('Failed to start download.');
+            }
+        } else {
+            alert('Please select at least one video to download.');
+        }
     });
 }
 

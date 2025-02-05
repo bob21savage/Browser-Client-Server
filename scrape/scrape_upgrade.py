@@ -443,11 +443,16 @@ def setup_routes(app, socketio):
             soup = BeautifulSoup(response.text, 'html.parser')
             results = []
             
-            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Adjust selector based on actual HTML structure
-                title = video.find('h3').text.strip()
-                video_id = video.find('a', {'id': 'video-title'})['href'].split('v=')[1]  # Extract video ID from the link
-                results.append({'title': title, 'videoId': video_id})
-            
+            # Adjust selectors based on YouTube's HTML structure
+            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Use the appropriate tag for videos
+                title_element = video.find('h3')
+                if title_element:
+                    title = title_element.text.strip()
+                    video_link = video.find('a', {'id': 'video-title'})
+                    if video_link and 'href' in video_link.attrs:
+                        video_id = video_link['href'].split('v=')[1]  # Extract video ID from the link
+                        results.append({'title': title, 'videoId': video_id})
+        
             return {
                 'results': results,
                 'nextPageToken': None,  # YouTube's search results don't use nextPageToken in the same way

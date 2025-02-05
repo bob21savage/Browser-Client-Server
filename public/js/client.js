@@ -258,10 +258,7 @@ async function fetchSearchResults(query, pageToken = '') {
 
 function displaySearchResults(results) {
     const resultsContainer = document.getElementById('results');
-    // Clear previous results
-    while (resultsContainer.firstChild) {
-        resultsContainer.removeChild(resultsContainer.firstChild);
-    }
+    resultsContainer.innerHTML = ''; // Clear previous results
 
     results.forEach(video => {
         const videoElement = document.createElement('div');
@@ -272,12 +269,12 @@ function displaySearchResults(results) {
         resultsContainer.appendChild(videoElement);
     });
 
-    // Add a button to load more results if there's a next page token
+    // Add a Next button if there's a next page token
     if (nextPageToken) {
-        const loadMoreButton = document.createElement('button');
-        loadMoreButton.innerText = 'Load More';
-        loadMoreButton.onclick = () => fetchSearchResults(query, nextPageToken);
-        resultsContainer.appendChild(loadMoreButton);
+        const nextButton = document.createElement('button');
+        nextButton.innerText = 'Next';
+        nextButton.onclick = () => fetchSearchResults(query, nextPageToken);
+        resultsContainer.appendChild(nextButton);
     }
 }
 

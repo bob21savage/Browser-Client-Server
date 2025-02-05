@@ -233,26 +233,26 @@ function addSearchResult(result) {
 }
 
 async function fetchSearchResults(query) {
-    console.log(`Fetching results for query: ${query}`);
-    try {
-        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}`);
-        const data = await response.json();
+    const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}`);
+    const data = await response.json();
 
-        if (data && Array.isArray(data.pages)) {
-            pages = data.pages; // Store the pages globally
-            displaySearchResults(); // Call display function without passing pages
-        } else {
-            console.error("Unexpected response structure:", data);
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-        alert('Failed to load search results. Please try again later.');
+    if (data && Array.isArray(data.pages)) {
+        pages = data.pages; // Store the pages globally
+        currentPage = 0; // Reset to the first page
+        displaySearchResults(); // Call display function without passing pages
+    } else {
+        console.error("Unexpected response structure:", data);
     }
 }
 
 function displaySearchResults() {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = ''; // Clear previous results
+
+    if (pages.length === 0) {
+        resultsContainer.innerHTML = '<p>No results found.</p>';
+        return;
+    }
 
     const currentResults = pages[currentPage]; // Get results for the current page
 

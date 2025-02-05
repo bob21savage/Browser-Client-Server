@@ -487,7 +487,7 @@ def setup_routes(app, socketio):
             }
         else:
             logger.error(f"Error fetching videos: {response.status_code} - {response.text}")
-            return {'results': [], 'nextPageToken': None, 'count': 0}
+            return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Error fetching videos'}
 
     @app.route('/download_videos', methods=['POST'])
     def download_videos():

@@ -440,8 +440,11 @@ def setup_routes(app, socketio):
 
 
     def perform_video_search(query, page, limit):
-        api_key = os.getenv('YOUTUBE_API_KEY')  # Replace with the name of your environment variable
-        url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&pageToken={page}&key={api_key}'
+        api_key = os.getenv('YOUTUBE_API_KEY')  # Retrieve the API key from environment variables
+        url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&key={api_key}'
+        
+        if page > 1:
+            url += f"&pageToken={page}"  # Add pageToken only if it's not the first page
         
         logger.debug(f"Performing video search for query: {query}, page: {page}, limit: {limit}")
         

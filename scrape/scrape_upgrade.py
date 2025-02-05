@@ -429,14 +429,27 @@ def setup_routes(app, socketio):
     def search_videos():
         data = request.args
         query = data.get('query')
-        page_token = data.get('pageToken', '')  # Get the pageToken from the request
-        limit = int(data.get('limit', 10))  # Convert to integer
+        logger.debug(f"Searching videos with query: {query}")
 
-        logger.debug(f"Searching videos with query: {query}, pageToken: {page_token}, limit: {limit}")
-        
-        # Implement video search logic here
-        results = perform_video_search(query, page_token, limit)
-        return jsonify(results)
+        # Collect all video results live
+        results = collect_all_video_results(query)
+        return jsonify({'results': results, 'count': len(results)})
+
+    def collect_all_video_results(query):
+        all_results = []
+        next_page_token = None
+        limit = 10
+
+        while True:
+            response = perform_video_search(query, next_page_token, limit)
+            results = response['results']
+            all_results.extend(results)
+            next_page_token = response['nextPageToken']
+
+            if not next_page_token:
+                break  # Exit loop if there are no more pages
+
+        return all_results
 
     def perform_video_search(query, page_token, limit):
         api_key = os.getenv('YOUTUBE_API_KEY')  # Retrieve the API key from environment variables
@@ -450,16 +463,24 @@ def setup_routes(app, socketio):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
+            logger.debug(f"API Response: {data}")  # Log the entire API response
             # Extract the nextPageToken from the response
             next_page_token = data.get('nextPageToken', None)
-            results = data.get('items', [])
+            results = []
+            for item in data.get('items', []):
+                if item['id']['kind'] == 'youtube#video':  # Check if the item is a video
+                    results.append({
+                        'title': item['snippet']['title'],
+                        'videoId': item['id']['videoId']
+                    })
+            logger.debug(f"Search results: {results}, nextPageToken: {next_page_token}")
             return {
                 'results': results,
                 'nextPageToken': next_page_token,
                 'count': len(results)
             }
         else:
-            logger.error(f"Error fetching videos: {response.status_code}")
+            logger.error(f"Error fetching videos: {response.status_code} - {response.text}")
             return {'results': [], 'nextPageToken': None, 'count': 0}
 
     @app.route('/download_videos', methods=['POST'])

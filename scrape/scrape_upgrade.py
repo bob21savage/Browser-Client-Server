@@ -431,64 +431,28 @@ def setup_routes(app, socketio):
         query = data.get('query')
         logger.debug(f"Searching videos with query: {query}")
 
-        # Collect all video results live
-        results = collect_all_video_results(query)
-
-        # Implement pagination logic
-        page_size = 20
-        total_results = len(results)
-        pages = [results[i:i + page_size] for i in range(0, total_results, page_size)]
-
-        return jsonify({'pages': pages, 'totalPages': len(pages), 'count': total_results})
-
-    def collect_all_video_results(query):
-        all_results = []
-        next_page_token = None
-        limit = 10
-
-        while True:
-            response = perform_video_search(query, next_page_token, limit)
-            results = response['results']
-            all_results.extend(results)
-            next_page_token = response['nextPageToken']
-
-            if not next_page_token:
-                break  # Exit loop if there are no more pages
-
-        return all_results
+        results = perform_video_search(query, None, 10)
+        return jsonify(results)
 
     def perform_video_search(query, page_token, limit):
-        api_key = os.getenv('YOUTUBE_API_KEY')  # Retrieve the API key from environment variables
-        url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&key={api_key}'
-        
-        if page_token:
-            url += f"&pageToken={page_token}"  # Add pageToken if provided
-        
-        logger.debug(f"Performing video search for query: {query}, pageToken: {page_token}, limit: {limit}")
-        
+        url = f'https://example.com/search?q={query}'  # Adjust this URL for your target site
         response = requests.get(url)
+        
         if response.status_code == 200:
-            data = response.json()
-            logger.debug(f"API Response: {data}")  # Log the entire API response
-            # Extract the nextPageToken from the response
-            next_page_token = data.get('nextPageToken', None)
+            soup = BeautifulSoup(response.text, 'html.parser')
             results = []
-            for item in data.get('items', []):
-                if item['id']['kind'] == 'youtube#video':  # Check if the item is a video
-                    results.append({
-                        'title': item['snippet']['title'],
-                        'videoId': item['id']['videoId']
-                    })
-            logger.debug(f"Search results: {results}, nextPageToken: {next_page_token}")
+            
+            for video in soup.find_all('div', class_='video-item'):  # Change selector based on actual HTML structure
+                title = video.find('h3').text
+                video_id = video['data-video-id']  # Change this based on actual attribute
+                results.append({'title': title, 'videoId': video_id})
+            
             return {
                 'results': results,
-                'nextPageToken': next_page_token,
+                'nextPageToken': None,  # Implement pagination logic if needed
                 'count': len(results)
             }
         else:
-            logger.error(f"Error fetching videos: {response.status_code} - {response.text}")
-            if response.status_code == 403:
-                return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Quota exceeded. Please try again later.'}
             return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Error fetching videos'}
 
     @app.route('/download_videos', methods=['POST'])

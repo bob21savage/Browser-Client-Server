@@ -13,6 +13,7 @@ from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
 from flask import request, jsonify
+from flask_cors import CORS
 import yt_dlp
 import sqlite3
 
@@ -398,6 +399,9 @@ def setup_routes(app, socketio):
     # Track search status
     search_in_progress = False
     
+    # Allow CORS for the specified frontend domain
+    CORS(app, resources={r"/*": {"origins": "https://youtube-qotc.onrender.com"}})
+
     @app.route('/search_directories', methods=['GET'])
     def search_directories():
         base_directory = request.args.get('base_directory', '.')  # Default to current directory

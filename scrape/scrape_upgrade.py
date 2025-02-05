@@ -404,14 +404,15 @@ def setup_routes(app, socketio):
         data = request.json
         app.logger.debug(f"Received data: {data}")
         urls = data.get('urls', [])
+        location = data.get('location', os.path.expanduser('~/Downloads'))  # Get the location from the request
         cookie_file = data.get('cookiefile')  # Get the cookies file path from the request
 
         if not cookie_file or not os.path.exists(cookie_file):
-            return jsonify({'status': 'error', 'message': 'No valid cookies file found. Please provide a valid path.\n\nInstructions for Exporting Cookies:\n1. For Chrome: Use the EditThisCookie extension to export cookies.\n2. For Firefox: Use the Cookies.txt extension to export cookies.\n3. For Edge: Use the EditThisCookie extension or sync with Chrome to export cookies.'}), 400
+            return jsonify({'status': 'error', 'message': 'The required cookies file is not being used or does not exist. Please provide a valid path.\n\nInstructions for Exporting Cookies:\n1. For Chrome: Use the EditThisCookie extension to export cookies.\n2. For Firefox: Use the Cookies.txt extension to export cookies.\n3. For Edge: Use the EditThisCookie extension or sync with Chrome to export cookies.'}), 400
 
         # Initialize ydl_opts
         ydl_opts = {
-            'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
+            'outtmpl': os.path.join(location, '%(title)s.%(ext)s'),  # Save to provided location
         }
 
         # If a cookie file is provided and exists, add it to options

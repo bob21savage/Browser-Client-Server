@@ -1,11 +1,9 @@
-+import os
 import re
 import json
 import random
 import asyncio
 import logging
 import aiohttp
-import requests
 import html2text
 from bs4 import BeautifulSoup
 from datetime import datetime

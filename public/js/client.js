@@ -361,7 +361,17 @@ if (downloadButton) {
 if (searchHistoryButton) {
     searchHistoryButton.addEventListener('click', async () => {
         try {
-            const response = await fetch('/search_history');
+            const response = await fetch('/search_history', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+
             const data = await response.json();
             displaySearchHistory(data);
         } catch (error) {

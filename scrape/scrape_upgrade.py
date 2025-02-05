@@ -457,8 +457,7 @@ def setup_routes(app, socketio):
 
     @app.route('/search_history', methods=['GET'])
     def get_search_history():
-        # Fetch search history from the database
-        results = fetch_search_history_from_db()  # Implement this function to query the database
+        results = fetch_search_history_from_db()  # This function should retrieve the search history
         return jsonify(results)
 
     @app.route('/search', methods=['POST'])

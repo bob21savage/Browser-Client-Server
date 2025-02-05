@@ -433,7 +433,13 @@ def setup_routes(app, socketio):
 
         # Collect all video results live
         results = collect_all_video_results(query)
-        return jsonify({'results': results, 'count': len(results)})
+
+        # Implement pagination logic
+        page_size = 20
+        total_results = len(results)
+        pages = [results[i:i + page_size] for i in range(0, total_results, page_size)]
+
+        return jsonify({'pages': pages, 'totalPages': len(pages), 'count': total_results})
 
     def collect_all_video_results(query):
         all_results = []

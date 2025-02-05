@@ -235,7 +235,7 @@ function addSearchResult(result) {
 async function fetchSearchResults(query, pageToken = '') {
     console.log(`Fetching results for query: ${query}, pageToken: ${pageToken}`);
     try {
-        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}&pageToken=${pageToken}`);
+        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}&pageToken=${pageToken}&limit=10`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

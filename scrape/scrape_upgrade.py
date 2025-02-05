@@ -438,7 +438,6 @@ def setup_routes(app, socketio):
         results = perform_video_search(query, page_token, limit)
         return jsonify(results)
 
-
     def perform_video_search(query, page_token, limit):
         api_key = os.getenv('YOUTUBE_API_KEY')  # Retrieve the API key from environment variables
         url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&key={api_key}'

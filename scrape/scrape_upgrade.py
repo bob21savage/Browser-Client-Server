@@ -86,11 +86,14 @@ class VideoSearchCrawler:
                     
                 # YouTube search URL with sort parameter
                 search_url = f"https://www.youtube.com/results?search_query={quote(query)}{sort_param}"
+                logger.info(f"Constructed search URL: {search_url}")
+                logger.info(f"Searching YouTube: {search_url}")
                 
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
+                            logger.debug(f"HTML Response: {html}")  # <--- Added logging for HTML response
                             
                             # Extract video IDs using regex
                             video_ids = re.findall(r'"videoId":"([^"]+)"', html)
@@ -138,6 +141,7 @@ class VideoSearchCrawler:
                     break
                 
                 search_url = f"https://m.youtube.com/results?search_query={quote(query)}&page={page}"
+                logger.info(f"Constructed search URL: {search_url}")
                 logger.info(f"Searching YouTube Mobile page {page}: {search_url}")
                 
                 async with aiohttp.ClientSession() as session:

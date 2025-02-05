@@ -435,26 +435,28 @@ def setup_routes(app, socketio):
         return jsonify(results)
 
     def perform_video_search(query, page_token, limit):
-        url = f'https://example.com/search?q={query}'  # Adjust this URL for your target site
+        # URL for YouTube search (URL encoding the query)
+        url = f'https://www.youtube.com/results?search_query={query}'  # YouTube search URL
         response = requests.get(url)
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             results = []
             
-            for video in soup.find_all('div', class_='video-item'):  # Change selector based on actual HTML structure
-                title = video.find('h3').text
-                video_id = video['data-video-id']  # Change this based on actual attribute
+            # Adjust selectors based on YouTube's HTML structure
+            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Use the appropriate tag for videos
+                title = video.find('h3').text.strip()
+                video_id = video.find('a', {'id': 'video-title'})['href'].split('v=')[1]  # Extract video ID from the link
                 results.append({'title': title, 'videoId': video_id})
             
             return {
                 'results': results,
-                'nextPageToken': None,  # Implement pagination logic if needed
+                'nextPageToken': None,  # YouTube's search results don't use nextPageToken in the same way
                 'count': len(results)
             }
         else:
             return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Error fetching videos'}
-
+            
     @app.route('/download_videos', methods=['POST'])
     def download_videos():
         data = request.json

@@ -266,6 +266,7 @@ async function fetchResults() {
         }
     } catch (error) {
         console.error("Fetch error:", error);
+        alert('Failed to load search results. Please try again later.');
     }
 }
 
@@ -315,18 +316,23 @@ if (downloadButton) {
         const cookieFilePath = prompt("Please enter the path to your cookies file:"); // Prompt user for cookies file path
 
         if (selectedVideos.length > 0) {
-            const response = await fetch('/download_videos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ urls: selectedVideos, cookiefile: cookieFilePath })
-            });
-            
-            if (response.ok) {
+            try {
+                const response = await fetch('/download_videos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ urls: selectedVideos, cookiefile: cookieFilePath })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to start download');
+                }
+                
                 console.log('Download started for selected videos.');
-            } else {
-                console.error('Failed to start download.');
+            } catch (error) {
+                console.error('Failed to start download:', error);
+                alert('Failed to start download. Please try again later.');
             }
         } else {
             alert('Please select at least one video to download.');

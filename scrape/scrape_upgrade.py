@@ -438,6 +438,7 @@ def setup_routes(app, socketio):
     def perform_video_search(query):
         # Construct the search URL
         url = f'https://www.youtube.com/results?search_query={query}'
+        logger.info(f"Searching URL: {url}")  # Log the search URL
         
         # Send a GET request to the YouTube search page
         response = requests.get(url)

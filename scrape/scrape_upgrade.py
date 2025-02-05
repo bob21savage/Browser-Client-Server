@@ -459,13 +459,20 @@ def setup_routes(app, socketio):
 
     @app.route('/search_history', methods=['GET'])
     def get_search_history():
-        results = fetch_search_history_from_db()  # This function should retrieve the search history
-        return jsonify(results)
+        logger.debug("Fetching search history.")
+        try:
+            results = fetch_search_history_from_db()
+            logger.debug(f"Search history retrieved: {results}")
+            return jsonify(results)
+        except Exception as e:
+            logger.error(f"Error fetching search history: {str(e)}")
+            return jsonify({'error': 'Failed to fetch search history'}), 500
 
     @app.route('/search', methods=['POST'])
     def perform_search():
         logger.debug("Perform search function called.")
         data = request.json
+        logger.debug(f"Received data: {data}")  # Log the received data
         query = data.get('query')
         
         if not query:

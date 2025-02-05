@@ -487,6 +487,7 @@ def setup_routes(app, socketio):
         
         try:
             insert_search_query(query)  # Log the search query
+            logger.debug("Query inserted successfully.")
         except sqlite3.Error as e:
             logger.error(f"Failed to insert query: {str(e)}")
             logger.error(f"Database error: {e.args[0]}")

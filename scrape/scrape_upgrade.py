@@ -12,20 +12,22 @@ from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
-from flask import request
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-class WebSearchCrawler:
-    def __init__(self, base_directory: str, topic: str = None):
-        self.base_directory = base_directory
+class VideoSearchCrawler:
+    def __init__(self, topic: str):
         self.main_topic = topic
         self.search_results = []
         self.seen_links = set()
+        
+        # Initialize HTML converter
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_links = False
+        
+        # Initialize headers
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -45,101 +47,71 @@ class WebSearchCrawler:
         try:
             logger.info(f"Starting search for: {self.main_topic}")
             all_results = []
+            
+            # Create tasks for all search engines
             tasks = [
                 self._search_youtube(self.main_topic),
                 self._search_youtube_mobile(self.main_topic),
                 self._search_bing_videos(self.main_topic),
-                self._search_bing_videos_uk(self.main_topic),
-                self.search_videos_on_platforms(self.main_topic)
+                self._search_bing_videos_uk(self.main_topic)
             ]
+            
+            # Run all searches in parallel
             results = await asyncio.gather(*tasks)
+            
+            # Combine results
             for engine_results in results:
                 if engine_results:
-                    all_results.extend(engine_results['results'])
-                    logger.info(f"Found {engine_results['count']} results from {engine_results['results'][0]['platform'] if engine_results['results'] else 'Unknown'}")
+                    all_results.extend(engine_results)
+                    logger.info(f"Found {len(engine_results)} results from {engine_results[0]['platform'] if engine_results else 'Unknown'}")
+            
+            # Shuffle results to mix platforms
             random.shuffle(all_results)
             return all_results
+            
         except Exception as e:
             logger.error(f"Error in collect_results: {str(e)}")
             raise
-
-    async def search_videos_on_platforms(self, query: str, page: int = 1, limit: int = 10) -> Dict[str, Any]:
-        """Search for videos across various platforms without using APIs, with pagination."""
-        results = []
-        seen_links = set()  # To track seen video URLs
-        try:
-            # YouTube Search
-            youtube_results = await self._search_youtube(query)
-            for video in youtube_results:
-                if video['url'] not in seen_links:
-                    video_id = video['url'].split('v=')[-1]
-                    video['embed'] = f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
-                    results.append(video)
-                    seen_links.add(video['url'])
-
-            # YouTube Mobile Search
-            youtube_mobile_results = await self._search_youtube_mobile(query)
-            for video in youtube_mobile_results:
-                if video['url'] not in seen_links:
-                    video_id = video['url'].split('v=')[-1]
-                    video['embed'] = f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
-                    results.append(video)
-                    seen_links.add(video['url'])
-
-            # Bing Video Search
-            bing_results = await self._search_bing_videos(query)
-            for video in bing_results:
-                if video['url'] not in seen_links:
-                    video['embed'] = f'<iframe width="560" height="315" src="{video["url"]}" frameborder="0" allowfullscreen></iframe>'
-                    results.append(video)
-                    seen_links.add(video['url'])
-
-            # Bing UK Video Search
-            bing_uk_results = await self._search_bing_videos_uk(query)
-            for video in bing_uk_results:
-                if video['url'] not in seen_links:
-                    video['embed'] = f'<iframe width="560" height="315" src="{video["url"]}" frameborder="0" allowfullscreen></iframe>'
-                    results.append(video)
-                    seen_links.add(video['url'])
-
-            # Pagination logic
-            total_results = len(results)
-            start_index = (page - 1) * limit
-            end_index = start_index + limit
-            paginated_results = results[start_index:end_index]
-
-            return {'count': total_results, 'results': paginated_results}
-        except Exception as e:
-            logger.error(f"Error searching platforms: {str(e)}")
-            return {'count': 0, 'results': []}
 
     async def _search_youtube(self, query: str) -> List[Dict]:
         """Search for videos on YouTube."""
         results = []
         try:
+            # Try different sorting options to get more results
             sort_params = ['', '&sp=CAI%253D', '&sp=CAM%253D']  # Default, Date, Rating
+            
             for sort_param in sort_params:
-                if len(results) >= 75:
+                if len(results) >= 75:  
                     break
+                    
+                # YouTube search URL with sort parameter
                 search_url = f"https://www.youtube.com/results?search_query={quote(query)}{sort_param}"
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
+                            
+                            # Extract video IDs using regex
                             video_ids = re.findall(r'"videoId":"([^"]+)"', html)
                             video_titles = re.findall(r'"title":{"runs":\[{"text":"([^"]+)"}]}', html)
                             video_durations = re.findall(r'"simpleText":"([0-9:]+)"', html)
                             video_views = re.findall(r'"viewCountText":{"simpleText":"([^"]+)"}', html)
+                            
+                            # Process unique video IDs
                             seen_ids = set()
                             for i, video_id in enumerate(video_ids):
-                                if video_id in seen_ids or len(results) >= 75:
+                                if video_id in seen_ids or len(results) >= 75:  
                                     continue
+                                    
                                 seen_ids.add(video_id)
                                 title = video_titles[i] if i < len(video_titles) else "Untitled Video"
                                 duration = video_durations[i] if i < len(video_durations) else "Unknown"
                                 views = video_views[i] if i < len(video_views) else "Unknown views"
+                                
                                 video_url = f"https://www.youtube.com/watch?v={video_id}"
                                 thumbnail_url = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+                                
                                 results.append({
                                     'title': title,
                                     'url': video_url,
@@ -150,48 +122,67 @@ class WebSearchCrawler:
                                     'description': f"Watch this video on YouTube: {title}",
                                     'source': 'YouTube'
                                 })
+                                
         except Exception as e:
             logger.error(f"Error searching YouTube: {str(e)}")
-        return results[:75]
+        
+        return results[:75]  
 
     async def _search_youtube_mobile(self, query: str) -> List[Dict]:
         """Search for videos on YouTube mobile site"""
         results = []
         try:
+            # Search multiple pages
             for page in range(1, 4):  # Get up to 3 pages of results
                 if len(results) >= 75:
                     break
+                
                 search_url = f"https://m.youtube.com/results?search_query={quote(query)}&page={page}"
                 logger.info(f"Searching YouTube Mobile page {page}: {search_url}")
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
                             soup = BeautifulSoup(html, 'html.parser')
+                            
+                            # Find video elements
                             video_elements = soup.find_all('div', class_='compact-media-item')
                             logger.info(f"Found {len(video_elements)} video elements on YouTube Mobile page {page}")
+                            
                             for element in video_elements:
                                 try:
                                     if len(results) >= 75:
                                         break
+                                    
+                                    # Get video ID and title
                                     link = element.find('a', href=True)
                                     if not link:
                                         continue
+                                        
                                     href = link.get('href', '')
                                     if not href or '/watch?v=' not in href:
                                         continue
+                                        
                                     video_id = href.split('watch?v=')[-1].split('&')[0]
                                     if not video_id:
                                         continue
+                                    
+                                    # Get title
                                     title_elem = element.find(['h4', 'h3', 'span'], class_=['compact-media-item-headline', 'title'])
                                     title = title_elem.text.strip() if title_elem else ''
                                     if not title:
                                         continue
+                                    
+                                    # Get thumbnail
                                     thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+                                    
+                                    # Get duration
                                     duration = 'Unknown'
                                     duration_elem = element.find('span', class_='compact-media-item-metadata')
                                     if duration_elem:
                                         duration = duration_elem.text.strip()
+                                    
                                     results.append({
                                         'title': title,
                                         'url': f"https://www.youtube.com/watch?v={video_id}",
@@ -202,12 +193,16 @@ class WebSearchCrawler:
                                         'source': 'YouTube'
                                     })
                                     logger.debug(f"Added YouTube Mobile result: {title}")
+                                    
                                 except Exception as e:
                                     logger.error(f"Error processing YouTube Mobile result: {str(e)}")
                                     continue
+                
                 await asyncio.sleep(1)  # Respect rate limits
+                
         except Exception as e:
             logger.error(f"Error searching YouTube Mobile: {str(e)}")
+        
         logger.info(f"Found {len(results)} results from YouTube Mobile")
         return results[:75]
 
@@ -215,47 +210,67 @@ class WebSearchCrawler:
         """Search for videos using Bing Video Search."""
         results = []
         try:
+            # Search multiple pages
             for offset in range(0, 100, 25):  # Get up to 100 results
                 if len(results) >= 75:
                     break
+                
                 search_url = f"https://www.bing.com/videos/search?q={quote(query)}&first={offset}"
                 logger.info(f"Searching Bing videos offset {offset}: {search_url}")
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
                             soup = BeautifulSoup(html, 'html.parser')
+                            
+                            # Try multiple selectors for video elements
                             video_elements = soup.find_all('div', class_='dg_u')
                             if not video_elements:
                                 video_elements = soup.find_all('div', class_='mc_vtvc')
                             if not video_elements:
                                 video_elements = soup.find_all('div', class_='mc_vtvc_meta')
+                                
                             logger.info(f"Found {len(video_elements)} video elements on Bing offset {offset}")
+                            
                             for element in video_elements:
                                 try:
                                     if len(results) >= 75:
                                         break
+                                    
+                                    # Try multiple ways to get title
                                     title = None
                                     title_elem = element.find(['div', 'span'], class_=['mc_vtvc_title', 'title'])
                                     if title_elem:
                                         title = title_elem.text.strip()
+                                    
+                                    # Try finding URL
                                     video_url = None
                                     link = element.find('a', href=True)
                                     if link:
                                         video_url = link.get('href', '')
+                                    
+                                    # Skip if we couldn't find essential info
                                     if not title or not video_url:
                                         logger.debug(f"Skipping Bing result - missing title or URL")
                                         continue
+                                    
+                                    # Ensure URL is absolute
                                     if video_url and not video_url.startswith('http'):
                                         video_url = f"https://www.bing.com{video_url}"
+                                    
+                                    # Get thumbnail
                                     thumbnail = None
                                     img = element.find('img')
                                     if img:
                                         thumbnail = img.get('src') or img.get('data-src')
+                                    
+                                    # Get duration if available
                                     duration = 'Unknown'
                                     duration_elem = element.find(['div', 'span'], class_=['mc_vtvc_duration', 'duration'])
                                     if duration_elem:
                                         duration = duration_elem.text.strip()
+                                    
                                     results.append({
                                         'title': title,
                                         'url': video_url,
@@ -266,12 +281,16 @@ class WebSearchCrawler:
                                         'source': 'Bing'
                                     })
                                     logger.debug(f"Added Bing result: {title}")
+                                    
                                 except Exception as e:
                                     logger.error(f"Error processing Bing result: {str(e)}")
                                     continue
+                
                 await asyncio.sleep(1)  # Respect rate limits
+                
         except Exception as e:
             logger.error(f"Error searching Bing: {str(e)}")
+        
         logger.info(f"Found {len(results)} results from Bing")
         return results[:75]
 
@@ -279,45 +298,65 @@ class WebSearchCrawler:
         """Search for videos using Bing UK Video Search."""
         results = []
         try:
+            # Search multiple pages
             for offset in range(0, 100, 25):  # Get up to 100 results
                 if len(results) >= 75:
                     break
+                
                 search_url = f"https://www.bing.co.uk/videos/search?q={quote(query)}&first={offset}"
                 logger.info(f"Searching Bing UK videos offset {offset}: {search_url}")
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
                             soup = BeautifulSoup(html, 'html.parser')
+                            
+                            # Try multiple selectors for video elements
                             video_elements = soup.find_all('div', class_='dg_u')
                             if not video_elements:
                                 video_elements = soup.find_all('div', class_='mc_vtvc')
+                                
                             logger.info(f"Found {len(video_elements)} video elements on Bing UK offset {offset}")
+                            
                             for element in video_elements:
                                 try:
                                     if len(results) >= 75:
                                         break
+                                    
+                                    # Try multiple ways to get title
                                     title = None
                                     title_elem = element.find(['div', 'span'], class_=['mc_vtvc_title', 'title'])
                                     if title_elem:
                                         title = title_elem.text.strip()
+                                    
+                                    # Try finding URL
                                     video_url = None
                                     link = element.find('a', href=True)
                                     if link:
                                         video_url = link.get('href', '')
+                                    
+                                    # Skip if we couldn't find essential info
                                     if not title or not video_url:
                                         logger.debug(f"Skipping Bing UK result - missing title or URL")
                                         continue
+                                    
+                                    # Ensure URL is absolute
                                     if video_url and not video_url.startswith('http'):
                                         video_url = f"https://www.bing.co.uk{video_url}"
+                                    
+                                    # Get thumbnail
                                     thumbnail = None
                                     img = element.find('img')
                                     if img:
                                         thumbnail = img.get('src') or img.get('data-src')
+                                    
+                                    # Get duration if available
                                     duration = 'Unknown'
                                     duration_elem = element.find(['div', 'span'], class_=['mc_vtvc_duration', 'duration'])
                                     if duration_elem:
                                         duration = duration_elem.text.strip()
+                                    
                                     results.append({
                                         'title': title,
                                         'url': video_url,
@@ -328,34 +367,18 @@ class WebSearchCrawler:
                                         'source': 'Bing'
                                     })
                                     logger.debug(f"Added Bing UK result: {title}")
+                                    
                                 except Exception as e:
                                     logger.error(f"Error processing Bing UK result: {str(e)}")
                                     continue
+                
                 await asyncio.sleep(1)  # Respect rate limits
+                
         except Exception as e:
             logger.error(f"Error searching Bing UK: {str(e)}")
+        
         logger.info(f"Found {len(results)} results from Bing UK")
         return results[:75]
-
-    def search_directories(self):
-        """Search through open directories and return a list of video file and directory names."""
-        results = []
-        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv']
-        for root, dirs, files in os.walk(self.base_directory):
-            for name in files:
-                if any(name.lower().endswith(ext) for ext in video_extensions):
-                    results.append(os.path.join(root, name))
-        return results
-
-    def advanced_search(self, query):
-        """Perform an advanced search based on the provided query for video files."""
-        results = []
-        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv']
-        for root, dirs, files in os.walk(self.base_directory):
-            for name in files:
-                if query.lower() in name.lower() and any(name.lower().endswith(ext) for ext in video_extensions):
-                    results.append(os.path.join(root, name))
-        return results
 
 def setup_routes(app, socketio):
     """Set up Flask routes and Socket.IO event handlers"""
@@ -363,41 +386,6 @@ def setup_routes(app, socketio):
     # Track search status
     search_in_progress = False
     
-    @app.route('/search_directories', methods=['GET'])
-    def search_directories():
-        base_directory = request.args.get('base_directory', '.')  # Default to current directory
-        results = []
-        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv']
-        for root, dirs, files in os.walk(base_directory):
-            for name in files:
-                if any(name.lower().endswith(ext) for ext in video_extensions):
-                    results.append(os.path.join(root, name))
-        return {'results': results}
-
-    @app.route('/advanced_search', methods=['GET'])
-    def advanced_search():
-        query = request.args.get('query', '')
-        base_directory = request.args.get('base_directory', '.')  # Default to current directory
-        results = []
-        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv']
-        for root, dirs, files in os.walk(base_directory):
-            for name in files:
-                if query.lower() in name.lower() and any(name.lower().endswith(ext) for ext in video_extensions):
-                    results.append(os.path.join(root, name))
-        return {'results': results}
-
-    @app.route('/search_videos', methods=['GET'])
-    def search_videos():
-        query = request.args.get('query', '')
-        page = int(request.args.get('page', 1))
-        limit = int(request.args.get('limit', 10))
-        
-        # Create a crawler instance and perform the search
-        crawler = WebSearchCrawler('.', query)
-        results = asyncio.run(crawler.search_videos_on_platforms(query, page, limit))
-        
-        return {'count': results['count'], 'results': results['results']}  # Ensure this returns the expected structure
-
     @socketio.on('connect')
     def handle_connect():
         logger.info("Client connected")
@@ -437,7 +425,7 @@ def setup_routes(app, socketio):
             
             # Create crawler and run search
             try:
-                crawler = WebSearchCrawler('.', query)
+                crawler = VideoSearchCrawler(query)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 all_results = loop.run_until_complete(crawler.collect_results())
@@ -453,8 +441,7 @@ def setup_routes(app, socketio):
                         'thumbnail': result.get('thumbnail', ''),
                         'source': result.get('source', 'Unknown'),
                         'duration': result.get('duration', 'Unknown'),
-                        'type': 'video',
-                        'embed': result.get('embed', '')
+                        'type': 'video'
                     }
                     processed_results.append(processed_result)
                     # Emit each result as it's processed

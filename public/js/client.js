@@ -21,14 +21,8 @@ const searchButton = document.getElementById('search-button');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
-const pageInfoElement = document.getElementById('page-info');
-const prevPageButton = document.getElementById('prev-page');
-const nextPageButton = document.getElementById('next-page');
 
 let totalResults = 0;
-let currentPage = 1;
-const resultsPerPage = 10;
-let query = '';
 
 // Socket.IO event handlers
 socket.on('connect', () => {
@@ -221,69 +215,11 @@ function addSearchResult(result) {
     }, 10);
 }
 
-function displayResults(results) {
-    const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear previous results
-
-    results.forEach(result => {
-        const resultElement = document.createElement('div');
-        resultElement.innerHTML = `
-            <h3>${result.title}</h3>
-            <img src="${result.thumbnail}" alt="${result.title}">
-            <p>${result.description}</p>
-            ${result.embed}
-        `;
-        resultsContainer.appendChild(resultElement);
-    });
-}
-
-async function fetchResults() {
-    console.log(`Fetching results for query: ${query}, page: ${currentPage}, limit: ${resultsPerPage}`);
-    try {
-        const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        console.log("Query parameters:", { query, page: currentPage, limit: resultsPerPage });
-        console.log("Response data:", data);
-        
-        if (data && Array.isArray(data.results)) {
-            displayResults(data.results);
-            updatePagination(data.count);
-        } else {
-            console.error("Unexpected response structure:", data);
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-function updatePagination(totalResults) {
-    const totalPages = Math.ceil(totalResults / resultsPerPage);
-    pageInfoElement.innerText = `Page ${currentPage} of ${totalPages}`;
-    prevPageButton.disabled = currentPage === 1;
-    nextPageButton.disabled = currentPage === totalPages;
-}
-
-prevPageButton.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        fetchResults();
-    }
-});
-
-nextPageButton.addEventListener('click', () => {
-    currentPage++;
-    fetchResults();
-});
-
 // Event Listeners
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        query = searchInput.value.trim();
+        const query = searchInput.value.trim();
         
         if (!query) {
             updateStatus('Please enter a search query', 'error');
@@ -295,8 +231,7 @@ if (searchForm) {
             return;
         }
         
-        currentPage = 1;
-        fetchResults();
+        socket.emit('search_query', { query });
     });
 }
 

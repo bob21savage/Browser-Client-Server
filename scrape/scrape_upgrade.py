@@ -12,6 +12,9 @@ from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
 
+# Initialize the database connection
+db_connection = sqlite3.connect('instance/advanced_scraper.db')
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

@@ -16,9 +16,6 @@ from flask_socketio import emit
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-class VideoSearchCrawler:
-    def __init__(self, topic: str):
         self.main_topic = topic
         self.search_results = []
         self.seen_links = set()
@@ -414,6 +411,22 @@ def setup_routes(app, socketio):
                 emit('search_error', {'error': 'Please enter a search query'})
                 return
 
+            logger.debug(f"Attempting to insert query into database: {query}")  # Debug log
+            try:
+                cursor = db_connection.cursor()
+                cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
+                db_connection.commit()
+            except sqlite3.Error as e:
+                logger.error(f"Failed to insert query: {str(e)}")
+                logger.error(f"Database error: {e.args[0]}")
+                emit('search_error', {'error': 'Failed to log search query'})
+                return
+            except Exception as e:
+                logger.error(f"Unexpected error: {str(e)}")
+                logger.error(f"Error details: {e.__dict__}")
+                emit('search_error', {'error': 'Failed to log search query'})
+                return
+            
             search_in_progress = True
             logger.info(f"Starting search for: {query}")
             

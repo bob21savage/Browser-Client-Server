@@ -246,10 +246,18 @@ async function fetchSearchResults(query) {
     const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}`);
     const data = await response.json();
 
-    if (data && Array.isArray(data.pages)) {
-        pages = data.pages; // Store the pages globally
+    console.log("Response data:", data); // Log the response for debugging
+
+    if (data.error) {
+        console.error(data.error);
+        alert(data.error); // Show an alert to the user
+        return;
+    }
+
+    if (data && Array.isArray(data.results)) {
+        pages = data.results; // Store the results in pages
         currentPage = 0; // Reset to the first page
-        displaySearchResults(); // Call display function without passing pages
+        displaySearchResults(); // Call display function
     } else {
         console.error("Unexpected response structure:", data);
     }

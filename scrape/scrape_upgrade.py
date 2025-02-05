@@ -432,10 +432,10 @@ def setup_routes(app, socketio):
         logger.debug(f"Searching videos with query: {query}")
 
         results = perform_video_search(query, None, 10)
+        logger.debug(f"Search results: {results}")  # Log the results before returning
         return jsonify(results)
 
     def perform_video_search(query, page_token, limit):
-        # URL for YouTube search (URL encoding the query)
         url = f'https://www.youtube.com/results?search_query={query}'  # YouTube search URL
         response = requests.get(url)
         
@@ -443,8 +443,7 @@ def setup_routes(app, socketio):
             soup = BeautifulSoup(response.text, 'html.parser')
             results = []
             
-            # Adjust selectors based on YouTube's HTML structure
-            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Use the appropriate tag for videos
+            for video in soup.find_all('ytd-video-renderer', limit=limit):  # Adjust selector based on actual HTML structure
                 title = video.find('h3').text.strip()
                 video_id = video.find('a', {'id': 'video-title'})['href'].split('v=')[1]  # Extract video ID from the link
                 results.append({'title': title, 'videoId': video_id})
@@ -455,8 +454,9 @@ def setup_routes(app, socketio):
                 'count': len(results)
             }
         else:
+            logger.error(f"Error fetching videos: {response.status_code} - {response.text}")
             return {'results': [], 'nextPageToken': None, 'count': 0, 'error': 'Error fetching videos'}
-            
+
     @app.route('/download_videos', methods=['POST'])
     def download_videos():
         data = request.json

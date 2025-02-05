@@ -429,8 +429,8 @@ def setup_routes(app, socketio):
     def search_videos():
         data = request.args
         query = data.get('query')
-        page = data.get('page', 1)
-        limit = data.get('limit', 10)
+        page = int(data.get('page', 1))  # Convert to integer
+        limit = int(data.get('limit', 10))  # Convert to integer
 
         logger.debug(f"Searching videos with query: {query}, page: {page}, limit: {limit}")
         

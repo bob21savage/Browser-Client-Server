@@ -21,18 +21,6 @@ const searchButton = document.getElementById('search-button');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
-const pageInfoElement = document.getElementById('page-info');
-const prevPageButton = document.getElementById('prev-page');
-const nextPageButton = document.getElementById('next-page');
-const downloadButton = document.getElementById('download-selected');
-const searchHistoryButton = document.getElementById('world-history-btn');
-const searchHistoryContainer = document.getElementById('search-history');
-
-let totalResults = 0;
-let currentPage = 0; // Track the current page
-let pages = []; // Store the pages globally
-let query = '';
-let nextPageToken = null; // Variable to store the next page token
 
 // Socket.IO event handlers
 socket.on('connect', () => {
@@ -242,95 +230,10 @@ function addSearchResult(result) {
     }, 10);
 }
 
-async function fetchSearchResults(query) {
-    const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}`);
-    const data = await response.json();
-
-    console.log("Response data:", data); // Log the response for debugging
-
-    if (data.error) {
-        console.error(data.error);
-        alert(data.error); // Show an alert to the user
-        return;
-    }
-
-    if (data && Array.isArray(data.results)) {
-        pages = data.results; // Store the results in pages
-        currentPage = 0; // Reset to the first page
-        displaySearchResults(); // Call display function
-    } else {
-        console.error("Unexpected response structure:", data);
-    }
-}
-
-function displaySearchResults() {
-    const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear previous results
-
-    if (pages.length === 0) {
-        resultsContainer.innerHTML = '<p>No results found.</p>';
-        return;
-    }
-
-    const currentResults = pages[currentPage]; // Get results for the current page
-
-    currentResults.forEach(video => {
-        const videoElement = document.createElement('div');
-        videoElement.innerHTML = `
-            <h3>${video.title}</h3>
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/${video.videoId}" frameborder="0" allowfullscreen></iframe>
-        `;
-        resultsContainer.appendChild(videoElement);
-    });
-
-    // Add a Next button if there are more pages
-    if (currentPage < pages.length - 1) {
-        const nextButton = document.createElement('button');
-        nextButton.innerText = 'Next';
-        nextButton.onclick = () => {
-            currentPage++;
-            displaySearchResults(); // Load the next page
-        };
-        resultsContainer.appendChild(nextButton);
-    }
-}
-
 // Event Listeners
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        query = searchInput.value; // Get the search query
-        currentPage = 0; // Reset to the first page
-        fetchSearchResults(query); // Fetch results for the initial query
-    });
-}
-
-if (downloadButton) {
-    downloadButton.addEventListener('click', async () => {
-        const selectedVideos = Array.from(document.querySelectorAll('.video-checkbox:checked')).map(cb => cb.dataset.url);
-        const cookieFilePath = prompt("Please enter the path to your cookies file:"); // Prompt user for cookies file path
-
-        if (selectedVideos.length > 0) {
-            try {
-                const response = await fetch('/download_videos', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ urls: selectedVideos, cookiefile: cookieFilePath })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to start download');
-                }
-                
-                console.log('Download started for selected videos.');
-            } catch (error) {
-                console.error('Failed to start download:', error);
-                alert('Failed to start download. Please try again later.');
-            }
-        } else {
-            alert('Please select at least one video to download.');
         }
     });
 }

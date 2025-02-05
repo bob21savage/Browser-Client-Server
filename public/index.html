@@ -29,7 +29,7 @@
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             line-height: 1.5;
             color: var(--text);
-            background-color: red;
+            background: var(--background);
         }
 
         .container {
@@ -232,21 +232,6 @@
             <div id="status" class="status status-info">Ready to search</div>
             <div id="stats"></div>
             <div id="results"></div>
-            <div id="video-results">
-                <!-- Example video result -->
-                <div>
-                    <input type="checkbox" class="video-checkbox" data-url="VIDEO_URL_HERE"> Video Title
-                </div>
-                <!-- Repeat for each video -->
-            </div>
-            <button id="download-selected">Download Selected Videos</button>
-            <button id="world-history-btn">World History</button>
-            <div id="history-results"></div>
-            <div id="pagination">
-                <button id="prev-page" disabled>Previous</button>
-                <span id="page-info"></span>
-                <button id="next-page">Next</button>
-            </div>
         </main>
     </div>
 

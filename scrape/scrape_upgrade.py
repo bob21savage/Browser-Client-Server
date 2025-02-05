@@ -33,6 +33,11 @@ cursor.execute('''
 ''')
 db_connection.commit()
 
+def insert_search_query(query):
+    cursor = db_connection.cursor()
+    cursor.execute("INSERT INTO search_history (query, timestamp) VALUES (?, ?)", (query, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    db_connection.commit()
+
 class WebSearchCrawler:
     def __init__(self, base_directory: str, topic: str = None):
         self.base_directory = base_directory
@@ -456,6 +461,29 @@ def setup_routes(app, socketio):
         results = fetch_search_history_from_db()  # Implement this function to query the database
         return jsonify(results)
 
+    @app.route('/search', methods=['POST'])
+    def perform_search():
+        data = request.json
+        query = data.get('query')
+        
+        if not query:
+            emit('search_error', {'error': 'Please enter a search query'})
+            return
+        
+        insert_search_query(query)  # Insert the search query into the database
+        
+        # Perform search logic
+        crawler = WebSearchCrawler('.', query)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        results = loop.run_until_complete(crawler.collect_results())
+        loop.close()
+        
+        if results:
+            return jsonify({'status': 'success', 'data': results}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'No results found.'}), 404
+
     @socketio.on('connect')
     def handle_connect():
         logger.info("Client connected")
@@ -484,6 +512,8 @@ def setup_routes(app, socketio):
                 emit('search_error', {'error': 'Please enter a search query'})
                 return
 
+            insert_search_query(query)  # Insert the search query into the database
+            
             search_in_progress = True
             logger.info(f"Starting search for: {query}")
             

@@ -467,9 +467,9 @@ def setup_routes(app, socketio):
     def get_search_history():
         logger.debug("Fetching search history.")
         try:
-            results = fetch_search_history_from_db()
+            results = fetch_search_history_from_db()  # Fetch history from the database
             logger.debug(f"Search history retrieved: {results}")
-            return jsonify(results)
+            return jsonify(results)  # Send results as JSON
         except Exception as e:
             logger.error(f"Error fetching search history: {str(e)}")
             return jsonify({'error': 'Failed to fetch search history'}), 500

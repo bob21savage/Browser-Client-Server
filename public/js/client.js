@@ -222,7 +222,16 @@ function addSearchResult(result) {
 }
 
 async function fetchResults() {
-    socket.emit('search_query', { query, page: currentPage, limit: resultsPerPage });
+    const response = await fetch(`/search_videos?query=${query}&page=${currentPage}&limit=${resultsPerPage}`);
+    const data = await response.json();
+    
+    // Ensure data is structured correctly
+    if (data && Array.isArray(data.results)) {
+        displayResults(data.results);
+        updatePagination(data.count);
+    } else {
+        console.error("Unexpected response structure:", data);
+    }
 }
 
 function updatePagination(totalResults) {

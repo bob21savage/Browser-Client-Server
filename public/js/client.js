@@ -29,8 +29,8 @@ const searchHistoryButton = document.getElementById('world-history-btn');
 const searchHistoryContainer = document.getElementById('search-history');
 
 let totalResults = 0;
-let currentPage = 1;
-const resultsPerPage = 10;
+let currentPage = 0; // Track the current page
+let pages = []; // Store the pages globally
 let query = '';
 let nextPageToken = null; // Variable to store the next page token
 
@@ -232,21 +232,15 @@ function addSearchResult(result) {
     }, 10);
 }
 
-async function fetchSearchResults(query, pageToken = '') {
-    console.log(`Fetching results for query: ${query}, pageToken: ${pageToken}`);
+async function fetchSearchResults(query) {
+    console.log(`Fetching results for query: ${query}`);
     try {
-        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}&pageToken=${pageToken}&limit=10`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await fetch(`/search_videos?query=${encodeURIComponent(query)}`);
         const data = await response.json();
-        
-        console.log("Query parameters:", { query, pageToken });
-        console.log("Response data:", data);
-        
-        if (data && Array.isArray(data.results)) {
-            displaySearchResults(data.results);
-            nextPageToken = data.nextPageToken; // Store the next page token
+
+        if (data && Array.isArray(data.pages)) {
+            pages = data.pages; // Store the pages globally
+            displaySearchResults(); // Call display function without passing pages
         } else {
             console.error("Unexpected response structure:", data);
         }
@@ -256,11 +250,13 @@ async function fetchSearchResults(query, pageToken = '') {
     }
 }
 
-function displaySearchResults(results) {
+function displaySearchResults() {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = ''; // Clear previous results
 
-    results.forEach(video => {
+    const currentResults = pages[currentPage]; // Get results for the current page
+
+    currentResults.forEach(video => {
         const videoElement = document.createElement('div');
         videoElement.innerHTML = `
             <h3>${video.title}</h3>
@@ -269,11 +265,14 @@ function displaySearchResults(results) {
         resultsContainer.appendChild(videoElement);
     });
 
-    // Add a Next button if there's a next page token
-    if (nextPageToken) {
+    // Add a Next button if there are more pages
+    if (currentPage < pages.length - 1) {
         const nextButton = document.createElement('button');
         nextButton.innerText = 'Next';
-        nextButton.onclick = () => fetchSearchResults(query, nextPageToken);
+        nextButton.onclick = () => {
+            currentPage++;
+            displaySearchResults(); // Load the next page
+        };
         resultsContainer.appendChild(nextButton);
     }
 }
@@ -282,19 +281,9 @@ function displaySearchResults(results) {
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        query = searchInput.value.trim();
-        
-        if (!query) {
-            updateStatus('Please enter a search query', 'error');
-            return;
-        }
-        
-        if (!socket.connected) {
-            updateStatus('Not connected to server. Please wait...', 'error');
-            return;
-        }
-        
-        fetchSearchResults(query);
+        query = searchInput.value; // Get the search query
+        currentPage = 0; // Reset to the first page
+        fetchSearchResults(query); // Fetch results for the initial query
     });
 }
 

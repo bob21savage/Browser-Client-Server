@@ -429,24 +429,24 @@ def setup_routes(app, socketio):
     def search_videos():
         data = request.args
         query = data.get('query')
-        page = int(data.get('page', 1))  # Convert to integer
+        page_token = data.get('pageToken', '')  # Get the pageToken from the request
         limit = int(data.get('limit', 10))  # Convert to integer
 
-        logger.debug(f"Searching videos with query: {query}, page: {page}, limit: {limit}")
+        logger.debug(f"Searching videos with query: {query}, pageToken: {page_token}, limit: {limit}")
         
         # Implement video search logic here
-        results = perform_video_search(query, page, limit)
+        results = perform_video_search(query, page_token, limit)
         return jsonify(results)
 
 
-    def perform_video_search(query, page, limit):
+    def perform_video_search(query, page_token, limit):
         api_key = os.getenv('YOUTUBE_API_KEY')  # Retrieve the API key from environment variables
         url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&key={api_key}'
         
-        if page > 1:
-            url += f"&pageToken={page}"  # Add pageToken only if it's not the first page
+        if page_token:
+            url += f"&pageToken={page_token}"  # Add pageToken if provided
         
-        logger.debug(f"Performing video search for query: {query}, page: {page}, limit: {limit}")
+        logger.debug(f"Performing video search for query: {query}, pageToken: {page_token}, limit: {limit}")
         
         response = requests.get(url)
         if response.status_code == 200:

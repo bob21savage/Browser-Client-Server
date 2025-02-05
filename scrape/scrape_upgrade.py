@@ -406,15 +406,17 @@ def setup_routes(app, socketio):
         urls = data.get('urls', [])
         cookie_file = data.get('cookiefile')  # Get the cookies file path from the request
 
-        if not cookie_file or not os.path.exists(cookie_file):
-            return jsonify({'status': 'error', 'message': 'No valid cookies file found. Please provide a valid path.'}), 400
+        # Initialize ydl_opts
+        ydl_opts = {
+            'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
+        }
+
+        # If a cookie file is provided and exists, add it to options
+        if cookie_file and os.path.exists(cookie_file):
+            ydl_opts['cookiefile'] = cookie_file
 
         try:
             for url in urls:
-                ydl_opts = {
-                    'outtmpl': os.path.join(os.path.expanduser('~/Downloads'), '%(title)s.%(ext)s'),  # Save to Downloads folder
-                    'cookiefile': cookie_file,  # Use the provided cookies file
-                }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
         

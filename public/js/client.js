@@ -234,7 +234,6 @@ function addSearchResult(result) {
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        }
     });
 }
 

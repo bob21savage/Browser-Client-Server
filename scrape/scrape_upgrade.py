@@ -458,8 +458,9 @@ def setup_routes(app, socketio):
                         'title': item['snippet']['title'],
                         'videoId': item['id']['videoId']
                     })
-            logger.debug(f"Search results: {results}")
-            return {"results": results, "count": len(results)}
+            next_page_token = data.get('nextPageToken')  # Capture the nextPageToken
+            logger.debug(f"Search results: {results}, nextPageToken: {next_page_token}")
+            return {"results": results, "count": len(results), "nextPageToken": next_page_token}
         else:
             logger.error(f"Error fetching from YouTube API: {response.status_code} - {response.text}")
             return {"results": [], "count": 0}

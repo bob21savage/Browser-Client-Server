@@ -239,10 +239,7 @@ function displayResults(results) {
         const resultElement = document.createElement('div');
         resultElement.innerHTML = `
             <h3>${result.title}</h3>
-            <img src="${result.thumbnail}" alt="${result.title}">
-            <p>${result.description}</p>
-            <input type="checkbox" class="video-checkbox" data-url="${result.url}"> Select to download
-            ${createVideoEmbed(result.url)}
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/${result.videoId}" frameborder="0" allowfullscreen></iframe>
         `;
         resultsContainer.appendChild(resultElement);
     });
@@ -364,6 +361,7 @@ if (searchHistoryButton) {
             const response = await fetch('/search_history', {
                 method: 'GET',
                 headers: {
+                    'Authorization': `Bearer ${process.env.API_KEY}`,
                     'Content-Type': 'application/json'
                 }
             });

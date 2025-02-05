@@ -402,6 +402,7 @@ def setup_routes(app, socketio):
     @app.route('/download_videos', methods=['POST'])
     def download_videos():
         data = request.json
+        app.logger.debug(f"Received data: {data}")  # Log the incoming data
         urls = data.get('urls', [])
         
         try:

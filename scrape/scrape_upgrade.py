@@ -41,8 +41,12 @@ def insert_search_query(query):
         cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
         db_connection.commit()
         logger.debug("Query inserted successfully.")
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error(f"Failed to insert query: {str(e)}")
+        logger.error(f"Database error: {e.args[0]}")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Error details: {e.__dict__}")
 
 class WebSearchCrawler:
     def __init__(self, base_directory: str, topic: str = None):
@@ -483,8 +487,14 @@ def setup_routes(app, socketio):
         
         try:
             insert_search_query(query)  # Log the search query
+        except sqlite3.Error as e:
+            logger.error(f"Failed to insert query: {str(e)}")
+            logger.error(f"Database error: {e.args[0]}")
+            emit('search_error', {'error': 'Failed to log search query'})
+            return
         except Exception as e:
-            logger.error(f"Error logging search query: {str(e)}")
+            logger.error(f"Unexpected error: {str(e)}")
+            logger.error(f"Error details: {e.__dict__}")
             emit('search_error', {'error': 'Failed to log search query'})
             return
         
@@ -492,7 +502,13 @@ def setup_routes(app, socketio):
         crawler = WebSearchCrawler('.', query)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        results = loop.run_until_complete(crawler.collect_results())
+        try:
+            results = loop.run_until_complete(crawler.collect_results())
+        except Exception as e:
+            logger.error(f"Error collecting results: {str(e)}")
+            emit('search_error', {'error': 'Failed to collect results'})
+            loop.close()
+            return
         loop.close()
         
         if results:
@@ -532,8 +548,14 @@ def setup_routes(app, socketio):
                 cursor = db_connection.cursor()
                 cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
                 db_connection.commit()
+            except sqlite3.Error as e:
+                logger.error(f"Failed to insert query: {str(e)}")
+                logger.error(f"Database error: {e.args[0]}")
+                emit('search_error', {'error': 'Failed to log search query'})
+                return
             except Exception as e:
-                logger.error(f"Error logging search query: {str(e)}")
+                logger.error(f"Unexpected error: {str(e)}")
+                logger.error(f"Error details: {e.__dict__}")
                 emit('search_error', {'error': 'Failed to log search query'})
                 return
             

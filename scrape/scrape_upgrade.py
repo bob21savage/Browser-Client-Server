@@ -455,6 +455,10 @@ def setup_routes(app, socketio):
                     video_id = title_element['href'].split('v=')[1]  # Extract video ID from the link
                     results.append({'title': title, 'videoId': video_id})
             
+            # Check if results are found
+            if not results:
+                return {'results': [], 'error': 'No videos found for the query.'}
+            
             return {
                 'results': results,
                 'nextPageToken': None,

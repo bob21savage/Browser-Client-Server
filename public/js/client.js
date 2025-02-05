@@ -237,25 +237,13 @@ if (searchForm) {
     });
 }
 
-if (searchHistoryButton) {
-    searchHistoryButton.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/search_history', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${process.env.API_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.statusText);
-            }
-
-            const data = await response.json();
-            displaySearchHistory(data);
-        } catch (error) {
-            console.error('Error fetching search history:', error);
+if (searchButton) {
+    searchButton.addEventListener('click', async () => {
+        const query = searchInput.value;
+        if (query) {
+            // Emit search event to server
+            socket.emit('search_query', { query });
+            searchButton.disabled = true;
         }
     });
 }

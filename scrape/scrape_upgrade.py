@@ -423,15 +423,33 @@ def setup_routes(app, socketio):
 
     @app.route('/search_videos', methods=['GET'])
     def search_videos():
-        query = request.args.get('query', '')
-        page = int(request.args.get('page', 1))
-        limit = int(request.args.get('limit', 10))
+        data = request.args
+        query = data.get('query')
+        page = data.get('page', 1)
+        limit = data.get('limit', 10)
+
+        logger.debug(f"Searching videos with query: {query}, page: {page}, limit: {limit}")
         
-        # Create a crawler instance and perform the search
-        crawler = WebSearchCrawler('.', query)
-        results = asyncio.run(crawler.search_videos_on_platforms(query, page, limit))
+        # Implement video search logic here
+        results = perform_video_search(query, page, limit)
+        return jsonify(results)
+
+
+    def perform_video_search(query, page, limit):
+        api_key = os.getenv('YOUTUBE_API_KEY')  # Replace with the name of your environment variable
+        url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&maxResults={limit}&pageToken={page}&key={api_key}'
         
-        return {'count': results['count'], 'results': results['results']}  # Ensure this returns the expected structure
+        logger.debug(f"Performing video search for query: {query}, page: {page}, limit: {limit}")
+        
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            results = [{'title': item['snippet']['title'], 'videoId': item['id']['videoId']} for item in data['items']]
+            logger.debug(f"Search results: {results}")
+            return {"results": results, "count": len(results)}
+        else:
+            logger.error(f"Error fetching from YouTube API: {response.status_code} - {response.text}")
+            return {"results": [], "count": 0}
 
     @app.route('/download_videos', methods=['POST'])
     def download_videos():
@@ -485,6 +503,7 @@ def setup_routes(app, socketio):
             emit('search_error', {'error': 'Please enter a search query'})
             return
         
+        logger.debug(f"Attempting to insert query into database: {query}")  # Debug log
         try:
             insert_search_query(query)  # Log the search query
             logger.debug("Query inserted successfully.")
@@ -545,6 +564,7 @@ def setup_routes(app, socketio):
                 emit('search_error', {'error': 'Please enter a search query'})
                 return
 
+            logger.debug(f"Attempting to insert query into database: {query}")  # Debug log
             try:
                 cursor = db_connection.cursor()
                 cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))

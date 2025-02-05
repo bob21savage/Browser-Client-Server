@@ -16,8 +16,6 @@ from flask import request, jsonify
 from flask_cors import CORS
 import yt_dlp
 import sqlite3
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

@@ -63,8 +63,8 @@ class WebSearchCrawler:
             logger.error(f"Error in collect_results: {str(e)}")
             raise
 
-    async def search_videos_on_platforms(self, query: str) -> Dict[str, Any]:
-        """Search for videos across various platforms without using APIs."""
+    async def search_videos_on_platforms(self, query: str, page: int = 1, limit: int = 10) -> Dict[str, Any]:
+        """Search for videos across various platforms without using APIs, with pagination."""
         results = []
         seen_links = set()  # To track seen video URLs
         try:
@@ -102,7 +102,13 @@ class WebSearchCrawler:
                     results.append(video)
                     seen_links.add(video['url'])
 
-            return {'count': len(results), 'results': results}
+            # Pagination logic
+            total_results = len(results)
+            start_index = (page - 1) * limit
+            end_index = start_index + limit
+            paginated_results = results[start_index:end_index]
+
+            return {'count': total_results, 'results': paginated_results}
         except Exception as e:
             logger.error(f"Error searching platforms: {str(e)}")
             return {'count': 0, 'results': []}

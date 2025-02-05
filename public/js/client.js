@@ -21,8 +21,14 @@ const searchButton = document.getElementById('search-button');
 const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
+const pageInfoElement = document.getElementById('page-info');
+const prevPageButton = document.getElementById('prev-page');
+const nextPageButton = document.getElementById('next-page');
 
 let totalResults = 0;
+let currentPage = 1;
+const resultsPerPage = 10;
+let query = '';
 
 // Socket.IO event handlers
 socket.on('connect', () => {
@@ -215,11 +221,34 @@ function addSearchResult(result) {
     }, 10);
 }
 
+async function fetchResults() {
+    socket.emit('search_query', { query, page: currentPage, limit: resultsPerPage });
+}
+
+function updatePagination(totalResults) {
+    const totalPages = Math.ceil(totalResults / resultsPerPage);
+    pageInfoElement.innerText = `Page ${currentPage} of ${totalPages}`;
+    prevPageButton.disabled = currentPage === 1;
+    nextPageButton.disabled = currentPage === totalPages;
+}
+
+prevPageButton.addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        fetchResults();
+    }
+});
+
+nextPageButton.addEventListener('click', () => {
+    currentPage++;
+    fetchResults();
+});
+
 // Event Listeners
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const query = searchInput.value.trim();
+        query = searchInput.value.trim();
         
         if (!query) {
             updateStatus('Please enter a search query', 'error');
@@ -231,7 +260,8 @@ if (searchForm) {
             return;
         }
         
-        socket.emit('search_query', { query });
+        currentPage = 1;
+        fetchResults();
     });
 }
 

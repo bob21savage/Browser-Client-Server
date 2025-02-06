@@ -29,12 +29,10 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.0",
-    "http-proxy-middleware": "^2.0.7",
+    "http-proxy-middleware": "^2.0.6",
     "open": "^9.1.0",
     "socket.io": "^4.7.2",
-    "socket.io-client": "^4.5.0",
-    "video-link-scraper": "file:",
-    "ws": "^8.18.0"
+    "socket.io-client": "^4.5.0"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",

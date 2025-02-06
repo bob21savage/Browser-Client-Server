@@ -6,6 +6,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { io } from 'socket.io-client';
 import open from 'open';
 import http from 'http';
+import WebSocket from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,16 +28,11 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(express.static(join(__dirname, 'src')));
 
 // Socket.IO connection to Flask server
-const socket = io(flaskUrl, {
+const socket = io('https://browser-client-server.onrender.com', {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 20000,
-    transports: ['polling', 'websocket'],  // Try polling first, then upgrade to websocket
-    upgrade: true,
-    forceNew: true,
-    withCredentials: true
 });
 
 let retryCount = 0;
@@ -67,6 +63,26 @@ socket.on('disconnect', () => {
     console.log('Disconnected from Flask server');
 });
 
+// WebSocket client
+const ws = new WebSocket('wss://browser-client-server.onrender.com/socket.io/?EIO=4&transport=websocket');
+
+ws.on('open', function() {
+    console.log('WebSocket connection established.');
+});
+
+ws.on('message', function(data) {
+    const message = data.toString();
+    console.log('Message from server:', message);
+});
+
+ws.on('error', function(error) {
+    console.error('WebSocket error:', error);
+});
+
+ws.on('close', function(code, reason) {
+    console.log('WebSocket connection closed:', code, reason);
+});
+
 // Proxy configuration
 const proxyOptions = {
     target: flaskUrl,
@@ -94,6 +110,20 @@ app.use('/socket.io', createProxyMiddleware({
 }));
 
 app.use('/api', createProxyMiddleware(proxyOptions));
+
+app.use('/api', createProxyMiddleware({
+    target: 'https://browser-client-server.onrender.com',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {'^/api' : ''},
+    onProxyRes: (proxyRes, req, res) => {
+        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+    },
+    onProxyReq: (proxyReq, req, res) => {
+        proxyReq.setHeader('Upgrade', 'websocket');
+        proxyReq.setHeader('Connection', 'upgrade');
+    }
+}));
 
 // Serve index.html for all other routes
 app.get('*', (req, res) => {
@@ -150,6 +180,7 @@ async function startServer() {
 function cleanup() {
     console.log('Shutting down gracefully...');
     socket.close();
+    ws.close();
     server.close(() => {
         console.log('Server closed');
         process.exit(0);

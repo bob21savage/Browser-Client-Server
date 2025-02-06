@@ -11,4 +11,3 @@ requests>=2.32.0
 gevent-websocket>=0.10.1
 flask_cors>=3.0.10
 eventlet
-yt-dlp

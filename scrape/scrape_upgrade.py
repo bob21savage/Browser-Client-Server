@@ -1,10 +1,11 @@
+import os
 import re
 import json
 import random
 import asyncio
 import logging
-import sqlite3
 import aiohttp
+import requests
 import html2text
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -12,20 +13,16 @@ from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
 
-# Initialize the database connection
-db_connection = sqlite3.connect('instance/advanced_scraper.db')
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class VideoSearchCrawler:
-    def __init__(self, topic):
-        # Initialize main topic, search results, and seen links
+    def __init__(self, topic: str):
         self.main_topic = topic
         self.search_results = []
         self.seen_links = set()
-
+        
         # Initialize HTML converter
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_links = False
@@ -44,7 +41,6 @@ class VideoSearchCrawler:
             'Sec-Fetch-User': '?1',
             'Cache-Control': 'max-age=0'
         }
-
 
     async def collect_results(self):
         """Collect video results from multiple sources"""
@@ -90,14 +86,11 @@ class VideoSearchCrawler:
                     
                 # YouTube search URL with sort parameter
                 search_url = f"https://www.youtube.com/results?search_query={quote(query)}{sort_param}"
-                logger.info(f"Constructed search URL: {search_url}")
-                logger.info(f"Searching YouTube: {search_url}")
                 
                 async with aiohttp.ClientSession() as session:
                     async with session.get(search_url, headers=self.headers) as response:
                         if response.status == 200:
                             html = await response.text()
-                            logger.debug(f"HTML Response: {html}")  # <--- Added logging for HTML response
                             
                             # Extract video IDs using regex
                             video_ids = re.findall(r'"videoId":"([^"]+)"', html)
@@ -145,7 +138,6 @@ class VideoSearchCrawler:
                     break
                 
                 search_url = f"https://m.youtube.com/results?search_query={quote(query)}&page={page}"
-                logger.info(f"Constructed search URL: {search_url}")
                 logger.info(f"Searching YouTube Mobile page {page}: {search_url}")
                 
                 async with aiohttp.ClientSession() as session:
@@ -422,22 +414,6 @@ def setup_routes(app, socketio):
                 emit('search_error', {'error': 'Please enter a search query'})
                 return
 
-            logger.debug(f"Attempting to insert query into database: {query}")  # Debug log
-            try:
-                cursor = db_connection.cursor()
-                cursor.execute("INSERT INTO search_history (query) VALUES (?)", (query,))
-                db_connection.commit()
-            except sqlite3.Error as e:
-                logger.error(f"Failed to insert query: {str(e)}")
-                logger.error(f"Database error: {e.args[0]}")
-                emit('search_error', {'error': 'Failed to log search query'})
-                return
-            except Exception as e:
-                logger.error(f"Unexpected error: {str(e)}")
-                logger.error(f"Error details: {e.__dict__}")
-                emit('search_error', {'error': 'Failed to log search query'})
-                return
-            
             search_in_progress = True
             logger.info(f"Starting search for: {query}")
             

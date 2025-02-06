@@ -22,6 +22,8 @@ const resultsContainer = document.getElementById('results');
 const statusElement = document.getElementById('status');
 const statsElement = document.getElementById('stats');
 
+let totalResults = 0;
+
 // Socket.IO event handlers
 socket.on('connect', () => {
     console.log('Connected to Flask server');
@@ -56,11 +58,6 @@ socket.on('new_result', (data) => {
 socket.on('search_completed', (data) => {
     console.log('Search completed:', data);
     hideLoadingIndicator();
-    if (data.error) {
-        console.error(data.error);
-        alert(data.error); // Show an alert to the user
-        return;
-    }
     updateStatus(`Search completed. Found ${data.total} results.`, 'success');
     updateSearchStats(data);
     if (searchButton) searchButton.disabled = false;
@@ -69,11 +66,6 @@ socket.on('search_completed', (data) => {
 socket.on('search_error', (data) => {
     console.error('Search error:', data);
     hideLoadingIndicator();
-    if (data.error) {
-        console.error(data.error);
-        alert(data.error); // Show an alert to the user
-        return;
-    }
     updateStatus(`Error: ${data.error}`, 'error');
     if (searchButton) searchButton.disabled = false;
 });
@@ -215,13 +207,6 @@ function addSearchResult(result) {
     `;
     resultElement.appendChild(metadata);
     
-    // Add checkbox for download
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'video-checkbox';
-    checkbox.dataset.url = result.url;
-    resultElement.appendChild(checkbox);
-    
     // Add to results container with animation
     resultElement.style.opacity = '0';
     resultsContainer.appendChild(resultElement);
@@ -234,17 +219,19 @@ function addSearchResult(result) {
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-    });
-}
-
-if (searchButton) {
-    searchButton.addEventListener('click', async () => {
-        const query = searchInput.value;
-        if (query) {
-            // Emit search event to server
-            socket.emit('search_query', { query });
-            searchButton.disabled = true;
+        const query = searchInput.value.trim();
+        
+        if (!query) {
+            updateStatus('Please enter a search query', 'error');
+            return;
         }
+        
+        if (!socket.connected) {
+            updateStatus('Not connected to server. Please wait...', 'error');
+            return;
+        }
+        
+        socket.emit('search_query', { query });
     });
 }
 

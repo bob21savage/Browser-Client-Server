@@ -11,6 +11,8 @@ from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
+import os
+import requests
 
 # Initialize the database connection
 db_connection = sqlite3.connect('instance/advanced_scraper.db')
@@ -19,7 +21,233 @@ db_connection = sqlite3.connect('instance/advanced_scraper.db')
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+class AdvancedContentScraper:
+    def __init__(self) -> None:
+        """Initialize the content scraper with SearX and enhanced media support."""
+        # List of common user agents
+        self.user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15'
+        ]
+        
+        # Initialize HTML converter
+        self.html_converter = html2text.HTML2Text()
+        self.html_converter.ignore_links = False
+        
+        # Initialize cache
+        self._cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache')
+        os.makedirs(self._cache_dir, exist_ok=True)
+        self._cache_durations = {
+            'web': 7200,      # 2 hours for web results
+            'images': 3600,   # 1 hour for images
+            'news': 1800,     # 30 minutes for news
+            'videos': 3600,   # 1 hour for videos
+            'audio': 3600     # 1 hour for audio
+        }
+        self._default_cache_duration = 3600
+        
+        # SearX configuration
+        self.searx_instances = [
+            'https://searx.be',
+            'https://search.ononoki.org',
+            'https://searx.tiekoetter.com',
+            'https://search.bus-hit.me',
+            'https://search.leptons.xyz'
+        ]
+        
+        # Proxy configuration
+        self._proxy_list = self._load_proxies()
+        self._proxy_failures = {}
+        
+        # Session management
+        self._session = None
+        
+        # Rate limiting
+        self._last_request_time = {}
+        self._min_delay = {
+            'searx': 1.0,  # 1 second between requests
+            'general': 0.5  # 0.5 seconds for other requests
+        }
+        self._max_retries = 3
+        self._max_requests_per_minute = 20  # SearX allows more requests
+        
+        self.spec = {
+            'icon': 'cinema.ico',  # Add the icon file here
+            'name': 'scrape_upgrade',
+            'version': '1.0',
+            'description': 'A scraper for video search',
+        }
+        
+    async def search(self, query: str, content_types: List[str] = None) -> Dict[str, List[Dict]]:
+        """Execute a search across multiple content types concurrently."""
+        # ... (rest of the search method)
+
 class VideoSearchCrawler:
+    def __init__(self, topic: str):
+        self.main_topic = topic
+        self.search_results = []
+        self.seen_links = set()
+        self.search_completed = False
+        self.session = requests.Session()
+        self.max_results = 1000  # Increased max results
+        self.min_results = 50
+        self.max_pages = 10
+        self.delay = 3  # Increased delay between requests
+        self.last_count = 0  # Initialize a variable to track the last count of results
+        
+        # Initialize headers
+        self.user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15'
+        ]
+        self.headers = {
+            'User-Agent': random.choice(self.user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+        }
+        
+        # List of search engines to query
+        self.search_engines = [
+            'https://search.aol.com/aol/search?q=',
+            'https://www.google.com/search?q=',
+            'https://www.bing.com/search?q=',
+            'https://search.yahoo.com/search?p=',
+            'https://duckduckgo.com/?q=',
+            'https://www.baidu.com/s?wd=',
+            'https://www.yandex.com/search/?text=',
+            'https://www.ask.com/web?q=',
+            'https://www.aol.com/search?q=',
+            'https://www.wolframalpha.com/input/?i=',
+            'https://www.startpage.com/do/search?q=',
+            'https://www.qwant.com/?q=',
+            'https://www.searchencrypt.com/search?q=',
+            'https://www.exalead.com/search/',
+            'https://www.kiddle.co/',
+            'https://www.yippy.com/search?query=',
+            'https://www.dogpile.com/search/web?q=',
+            'https://www.metacrawler.com/search/web?q=',
+            'https://www.gigablast.com/search?q=',
+            'https://www.lycos.com/search?q=',
+            'https://www.webcrawler.com/search/web?q=',
+            'https://www.info.com/search?q=',
+            'https://www.teoma.com/search?q=',
+            'https://www.bing.com/videos/search?q=',
+            'https://www.vimeo.com/search?q=',
+            'https://www.dailymotion.com/search?q=',
+            'https://www.twitch.tv/search?term=',
+            'https://www.tiktok.com/search?q=',
+            'https://www.search.com/search?q=',
+            'https://www.goo.gl/search?q=',
+            'https://www.filehorse.com/search?q=',
+            'https://www.searchenginewatch.com/?s=',
+            'https://www.searchtempest.com/search?q=',
+            'https://www.explore.com/search?q=',
+            'https://www.searchresults.com/search?q=',
+            'https://www.qwant.com/?q=',
+            'https://www.find.com/search?q=',
+            'https://www.searchenginejournal.com/search?q=',
+            'https://vimeo.com/search?q=',
+            'https://www.facebook.com/watch/search/?q=',
+            'https://www.veoh.com/search/videos?q=',
+            'https://www.metacafe.com/search/videos?q=',
+            'https://www.bitchute.com/search/?query=',
+            'https://rumble.com/search/?query=',
+            'https://soundcloud.com/search?q=',
+            'https://open.spotify.com/search?q=',
+            'https://tidal.com/search?q=',
+            'https://www.amazon.com/music/search?q=',
+            'https://www.pandora.com/search?q=',
+            'https://www.iheart.com/search?q=',
+            'https://www.mixcloud.com/search?q=',
+            'https://www.last.fm/search?q=',
+            'https://www.beatport.com/search?q=',
+            'https://www.buzzfeed.com/search?q=',
+            'https://www.huffpost.com/search?q=',
+            'https://www.cnn.com/search?q=',
+            'https://www.vice.com/search?q=',
+        ]
+        
+    async def collect_results(self):
+        logger.info(f"Starting search for: {self.main_topic}")
+        for engine in self.search_engines:
+            search_url = f'{engine}{self.main_topic}'
+            logger.info(f"Searching URL: {search_url}")
+            try:
+                html_content = await self.fetch_search_results(search_url)
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"Connection error with {engine}: {e}. Trying next engine.")
+                continue  # Skip to the next engine if there's a connection error
+            if html_content:
+                # Extract URLs from the HTML content
+                results = self.extract_page_urls(html_content, search_url)
+                
+                # Log the extracted URLs
+                if results:
+                    logger.info(f"Extracted URLs from {search_url}:")
+                    for result in results:
+                        logger.info(f"- {result['link']} (Title: {result['title']})")  # Assuming your results include a title
+                
+                # Add extracted results to the main results list
+                self.search_results.extend(results)
+                logger.info(f"Total results after {engine}: {len(self.search_results)}")
+            
+            await asyncio.sleep(3)  # Increased delay between requests
+        self.search_completed = True
+
+    async def fetch_search_results(self, url: str):
+        try:
+            logger.info(f"Making GET request to: {url}")
+            self.headers['User-Agent'] = random.choice(self.user_agents)
+            response = self.session.get(url, headers=self.headers, timeout=10)  # 10 seconds timeout
+            response.raise_for_status()  # Raises an error for HTTP error responses
+            return response.text
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 404:
+                logger.error(f"404 Not Found for URL: {url}")
+                return []  # Skip this URL and return empty results
+            else:
+                logger.error(f"HTTP error occurred: {e}")
+                return []  # Skip other errors as well
+
+    def extract_page_urls(self, html_content: str, base_url: str):
+        logger.info(f"Extracting URLs from HTML content.")
+        soup = BeautifulSoup(html_content, 'html.parser')
+        results = []
+    
+        # Extract URLs
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            title = link.get_text(strip=True)
+    
+            # Convert relative URLs to absolute URLs
+            if href:
+                full_url = urljoin(base_url, href)  # This will handle both relative and absolute URLs
+                if title:
+                    results.append({
+                        'link': full_url,
+                        'title': title,
+                    })
+                    logger.info(f"Extracted URL: {full_url} (Title: {title})")
+                    if full_url not in self.search_results:
+                        self.search_results.append({'link': full_url, 'title': title})
+                        new_results = len(self.search_results) - self.last_count
+                        self.last_count = len(self.search_results)
+                        logger.info(f"Progress - Total Results: {self.last_count}, New Results: {new_results}, Last Count: {self.last_count - new_results}")
+    
+        logger.info(f"Found {len(results)} results.")
+        return results
+
+class VideoSearchCrawlerOriginal:
     def __init__(self, topic):
         # Initialize main topic, search results, and seen links
         self.main_topic = topic
@@ -388,6 +616,17 @@ class VideoSearchCrawler:
         logger.info(f"Found {len(results)} results from Bing UK")
         return results[:75]
 
+class VideoSearchCrawlerRunner:
+    async def run_both_crawlers(self, query: str):
+        crawler1 = VideoSearchCrawler(query)
+        crawler2 = VideoSearchCrawlerOriginal(query)
+        
+        # Run both crawlers concurrently
+        await asyncio.gather(
+            crawler1.collect_results(),
+            crawler2.collect_results()
+        )
+
 def setup_routes(app, socketio):
     """Set up Flask routes and Socket.IO event handlers"""
     
@@ -449,7 +688,7 @@ def setup_routes(app, socketio):
             
             # Create crawler and run search
             try:
-                crawler = VideoSearchCrawler(query)
+                crawler = VideoSearchCrawlerOriginal(query)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 all_results = loop.run_until_complete(crawler.collect_results())

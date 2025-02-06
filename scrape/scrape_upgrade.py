@@ -11,6 +11,8 @@ from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
 from flask_socketio import emit
+from flask import Flask
+from flask_cors import CORS
 
 # Initialize the database connection
 db_connection = sqlite3.connect('instance/advanced_scraper.db')
@@ -18,6 +20,9 @@ db_connection = sqlite3.connect('instance/advanced_scraper.db')
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 class VideoSearchCrawler:
     def __init__(self, topic):

@@ -10,12 +10,15 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from urllib.parse import urljoin, quote, urlparse
 from typing import List, Dict, Any
-from flask_socketio import emit
+from flask_socketio import SocketIO, emit
 from flask import Flask
 from flask_cors import CORS
+import os
 
-# Initialize the database connection
-db_connection = sqlite3.connect('instance/advanced_scraper.db')
+# Set the absolute path for the database file
+db_path = os.path.join(os.path.dirname(__file__), 'instance', 'advanced_scraper.db')
+print(f'Database path: {db_path}')
+db_connection = sqlite3.connect(db_path)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -23,6 +26,19 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+# Initialize SocketIO with CORS support
+socketio = SocketIO(app, cors_allowed_origins='http://localhost:3000')
+
+@app.route('/test_db_connection', methods=['GET'])
+def test_db_connection():
+    try:
+        # Attempt to connect to the database
+        conn = sqlite3.connect(db_path)
+        conn.close()
+        return 'Database connection successful', 200
+    except Exception as e:
+        return f'Error connecting to database: {str(e)}', 500
 
 class VideoSearchCrawler:
     def __init__(self, topic):
@@ -493,3 +509,5 @@ def setup_routes(app, socketio):
         except Exception as e:
             logger.error(f"Error handling search query: {str(e)}")
             emit('search_error', {'error': str(e)})
+
+setup_routes(app, socketio)

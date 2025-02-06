@@ -6,19 +6,10 @@
     <title>Video Search</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --background: #f8fafc;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
+        body {
+            background-color: #333; /* Darker Grey */
+            color: #fff; /* Text color for contrast */
         }
-
         * {
             margin: 0;
             padding: 0;
@@ -28,8 +19,7 @@
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             line-height: 1.5;
-            color: var(--text);
-            background: var(--background);
+            color: #fff;
         }
 
         .container {
@@ -47,17 +37,23 @@
             font-size: 2.5rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            background: linear-gradient(45deg, var(--primary-color), #7c3aed);
+            background: linear-gradient(45deg, #2563eb, #7c3aed);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .search-container {
-            background: white;
+            background: #2563eb; /* Primary color */
             padding: 1.5rem;
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             margin-bottom: 2rem;
+            transition: transform 0.2s;
+        }
+
+        .search-container:hover {
+            transform: scale(1.02); /* Slightly enlarge on hover */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Darker shadow on hover */
         }
 
         #search-form {
@@ -68,7 +64,7 @@
         #search-input {
             flex: 1;
             padding: 0.75rem 1rem;
-            border: 2px solid var(--border);
+            border: 2px solid #e2e8f0; /* Border color */
             border-radius: 0.5rem;
             font-size: 1rem;
             transition: border-color 0.2s;
@@ -76,13 +72,13 @@
 
         #search-input:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: #2563eb; /* Primary color */
         }
 
         #search-button {
             padding: 0.75rem 1.5rem;
-            background: var(--primary-color);
-            color: white;
+            background: #2563eb; /* Primary color */
+            color: #fff;
             border: none;
             border-radius: 0.5rem;
             font-size: 1rem;
@@ -92,7 +88,7 @@
         }
 
         #search-button:hover {
-            background: var(--primary-hover);
+            background: #1d4ed8; /* Primary hover color */
         }
 
         .status {
@@ -110,29 +106,28 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 1rem;
-            color: var(--text-light);
+            color: #64748b; /* Text light color */
             font-size: 0.875rem;
         }
 
         .stat-item {
-            background: white;
+            background: #f8fafc; /* Background color */
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            border: 1px solid var(--border);
+            border: 1px solid #e2e8f0; /* Border color */
         }
 
         .result-item {
-            background: white;
+            background: #f8fafc; /* Background color */
             border-radius: 1rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s;
         }
 
         .result-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Darker shadow on hover */
         }
 
         .video-embed {
@@ -164,27 +159,27 @@
             display: block;
             font-size: 1.25rem;
             font-weight: 600;
-            color: var(--text);
+            color: #1e293b; /* Text color */
             text-decoration: none;
             margin-bottom: 0.5rem;
         }
 
         .result-title:hover {
-            color: var(--primary-color);
+            color: #2563eb; /* Primary color */
         }
 
         .result-metadata {
             display: flex;
             gap: 1rem;
-            color: var(--text-light);
+            color: #64748b; /* Text light color */
             font-size: 0.875rem;
         }
 
         .loader {
             width: 48px;
             height: 48px;
-            border: 5px solid var(--border);
-            border-bottom-color: var(--primary-color);
+            border: 5px solid #e2e8f0; /* Border color */
+            border-bottom-color: #2563eb; /* Primary color */
             border-radius: 50%;
             margin: 2rem auto;
             animation: rotation 1s linear infinite;
@@ -217,8 +212,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>youtube video search</h1>
-            <p>requires a cookie extractor for youtube video downloads</p>
+            <h1>Browser Client/Server</h1>
+            <p>in progress ...</p>
         </header>
 
         <main>
